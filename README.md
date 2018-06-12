@@ -23,7 +23,7 @@
 		create index 索引名 on 表名 ( 列名 );
 
 		
-		drop index stunameidx;
+		drop index 索引名;
 
 		
 		select * from 表名 ;
