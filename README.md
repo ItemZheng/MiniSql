@@ -6,7 +6,7 @@
 + 检查用户输入的语法，如果正确，转化为参数，调用API；错误，则直接给出语法层次的错误信息。
 
 	API 接口：
-		`API(int op, string [] arges)`
+		`API(String [] arges)`
 
 + 支持的语法：
 	
