@@ -1,9 +1,13 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import javax.print.attribute.standard.PrinterLocation;
+
+import org.w3c.dom.stylesheets.LinkStyle;
+
 import java.util.List;
 import java.util.ArrayList;
 import sun.print.resources.serviceui;
+import sun.security.util.Length;
 
 public class Interpreter {
 	
@@ -27,6 +31,7 @@ public class Interpreter {
 			System.out.print("Minisql->");
 			//read the ; and execute
 			String command = "";
+			String oldCommand = "";
 			try {
 				//read a line
 				BufferedReader s = new BufferedReader(new InputStreamReader(System.in));
@@ -54,16 +59,37 @@ public class Interpreter {
 				//invalid command
 				continue;
 			}
-			else
+			else if( argv.get(0).equals("quit"))
 			{
+				//quit
+				break;
+			}
+			else {
 				//api interface
 				//Api(argv);
+				
 			}
+			oldCommand = command;
 		}
+		
+		System.out.println("Bye~");
 	}
-	 
 	public static List CheckSyntax(String command)
 	{
+		//to lowwer case
+		command = command.toLowerCase();
+		//Check if end with ;
+		int index = command.indexOf(';');
+		for(index++ ; index < command.length();index++)
+		{
+			//there is some thing after ;
+			if(command.charAt(index) != '\t' && command.charAt(index) != ' ')
+			{
+				System.out.println("Syntax Error! Please end with a \" ; \"!");
+				return null;
+			}
+		}
+		
 		//get first space
 		int i = 0;
 		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
@@ -73,6 +99,8 @@ public class Interpreter {
 		i = 0;
 		while(command.charAt(i) <= 'z' && command.charAt(i) >= 'a') i++;
 		String op = command.substring(0, i);
+		
+		op = op.toLowerCase();
 		command = command.substring(i);
 		
 		if(op.equals("create"))
@@ -101,7 +129,7 @@ public class Interpreter {
 			//else syntax error
 			else
 			{
-				System.out.println(arv1 + " is not equel to table or index!");
+				System.out.println("Syntax Error! Expected table or index!");
 			}
 		}
 		else if(op.equals("drop"))
@@ -130,7 +158,7 @@ public class Interpreter {
 			//else syntax error
 			else
 			{
-				System.out.println(arv1 + " is not equel to table or index!");
+				System.out.println("Syntax Error! Expected table or index!");
 			}
 		}
 		else if(op.equals("select"))
@@ -145,13 +173,35 @@ public class Interpreter {
 		{
 			return CheckDelete(command);
 		}
+		else if(op.equals("quit"))
+		{
+			List argv = new ArrayList();
+			argv.add(op);
+			
+			//skip all '\t' and ' ' and '\n' 
+			i = 0;
+			while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+			command = command.substring(i);
+			
+			if(command.charAt(0) != ';')
+			{
+				System.out.println("Syntax Error! After quit expect nothing!");
+				return null;
+			}
+			return argv;
+		}
+		else if(op.equals("execfile"))
+		{
+			
+		}
 		else 
 		{
-			System.out.println("Syntax Error! Please check first word again!");
+			System.out.println("Syntax Error! Please check first argument again!");
 		}
 		return null;
 	}
 	
+	//return LIST and first argv is 0
 	public static List CheckCreateTable(String command)
 	{
 		List argv = new ArrayList();
@@ -159,36 +209,49 @@ public class Interpreter {
 		return null;
 	}
 	
+	//return LIST and first argv is 1
 	public static List CheckCreateIndex(String command)
 	{
 		
 		return null;
 	}
 	
+	//return LIST and first argv is 2
 	public static List CheckDropIndex(String command)
 	{
 		
 		return null;
 	}
 	
+	//return LIST and first argv is 3
 	public static List CheckDropTable(String command)
 	{
 		
 		return null;
 	}
 	
+	//return LIST and first argv is 4
 	public static List CheckSelect(String command)
 	{
 		return null;
 	}
 	
+	//return LIST and first argv is 5
 	public static List CheckInsert(String command)
 	{
 		return null;
 	}
 	
+	//return LIST and first argv is 6
 	public static List CheckDelete(String command)
 	{
+		return null;
+	}
+	
+	//return LIST and first argv is 7
+	public static List CheckExecuteFile(String command)
+	{
+		
 		return null;
 	}
 	
