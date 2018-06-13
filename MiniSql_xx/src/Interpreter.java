@@ -6,6 +6,8 @@ import org.w3c.dom.stylesheets.LinkStyle;
 
 import java.util.List;
 import java.util.ArrayList;
+
+import sun.plugin2.message.GetAppletMessage;
 import sun.print.resources.serviceui;
 import sun.security.util.Length;
 
@@ -76,8 +78,6 @@ public class Interpreter {
 	}
 	public static List CheckSyntax(String command)
 	{
-		//to lowwer case
-		command = command.toLowerCase();
 		//Check if end with ;
 		int index = command.indexOf(';');
 		for(index++ ; index < command.length();index++)
@@ -97,8 +97,8 @@ public class Interpreter {
 		
 		//get first argv
 		i = 0;
-		while(command.charAt(i) <= 'z' && command.charAt(i) >= 'a') i++;
-		String op = command.substring(0, i);
+		while((command.charAt(i) <= 'z' && command.charAt(i) >= 'a') || (command.charAt(i) <= 'Z' && command.charAt(i) >= 'A')) i++;
+		String op = command.substring(0, i).toLowerCase();
 		
 		op = op.toLowerCase();
 		command = command.substring(i);
@@ -112,8 +112,8 @@ public class Interpreter {
 			command = command.substring(i);
 			//get second argv
 			i = 0;
-			while(command.charAt(i) <= 'z' && command.charAt(i) >= 'a') i++;
-			String arv1 = command.substring(0, i);
+			while((command.charAt(i) <= 'z' && command.charAt(i) >= 'a') || (command.charAt(i) <= 'Z' && command.charAt(i) >= 'A')) i++;
+			String arv1 = command.substring(0, i).toLowerCase();
 			command = command.substring(i);
 			
 			//create table
@@ -141,8 +141,8 @@ public class Interpreter {
 			command = command.substring(i);
 			//get second argv
 			i = 0;
-			while(command.charAt(i) <= 'z' && command.charAt(i) >= 'a') i++;
-			String arv1 = command.substring(0, i);
+			while((command.charAt(i) <= 'z' && command.charAt(i) >= 'a') || (command.charAt(i) <= 'Z' && command.charAt(i) >= 'A')) i++;
+			String arv1 = command.substring(0, i).toLowerCase();
 			command = command.substring(i);
 			
 			//drop table
@@ -255,4 +255,63 @@ public class Interpreter {
 		return null;
 	}
 	
+	public static boolean IsValidName(String name)
+	{
+		//almost all key word
+		String [] KeyWord = {
+				"char", "varchar", "int", "smallint", "numeric", "real", "double", "precision", "float",
+				"primary", "key", "not", "null", "foreign", "references", "create", "table", "insert", "into",
+				"values", "delete", "from", "update", "set", "where", "drop", "unique", "index", "on", "alter", "add",
+				"distinct", "all", "and", "or", "natural", "join", "as", "by", "exist", "is", "group", "having"
+		};
+		
+		//check the name is valid !
+		int i;
+		for(i = 0; i < KeyWord.length; i++)
+		{
+			//can not be key word of SQL
+			if(name.toLowerCase().equals(KeyWord[i]))
+			{
+				System.out.println("Table name or index name or cloumn name can not be " + name + "!");
+				return false;
+			}
+		}
+		
+		//check if is valid
+		//our SQL's name must consist of number, letter or '_', and must start with '_' or letter
+		
+		//check first char
+		char firstCh = name.charAt(0);
+		if(!((firstCh >= 'a' && firstCh <= 'z') || (firstCh >= 'A' && firstCh <= 'Z') || firstCh == '_'))
+		{
+			System.out.println("Invalid table name or index name or cloumn name!");
+			return false;
+		}
+		
+		//check if is number or letter or '_'
+		for(i = 0; i < name.length(); i++)
+		{
+			char ch = name.charAt(i);
+			if(ch >= 'a' && ch <= 'z')
+			{
+				continue;
+			}
+			else if(ch >= 'A' && ch <= 'Z')
+			{
+				continue;
+			}
+			else if(ch == '_')
+			{
+				continue;
+			}
+			else 
+			{
+				//some char is not OK
+				System.out.println("Invalid table name or index name or cloumn name!");
+				return false;
+			}
+		}
+		
+		return true;
+	}
 }
