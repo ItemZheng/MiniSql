@@ -4,6 +4,8 @@ import javax.print.attribute.standard.PrinterLocation;
 
 import org.w3c.dom.stylesheets.LinkStyle;
 
+import com.sun.webkit.ThemeClient;
+
 import java.util.List;
 import java.util.ArrayList;
 
@@ -69,7 +71,7 @@ public class Interpreter {
 			else {
 				//api interface
 				//Api(argv);
-				
+				System.out.println(argv);
 			}
 			oldCommand = command;
 		}
@@ -210,6 +212,10 @@ public class Interpreter {
 	}
 	
 	//return LIST and first argv is 1
+	/*
+	 * 	arguments:
+	 * 			[ 1, index_name, table_name, column_name]	
+	 * */
 	public static List CheckCreateIndex(String command)
 	{
 		
@@ -217,16 +223,96 @@ public class Interpreter {
 	}
 	
 	//return LIST and first argv is 2
+	//argument format [ 2, index_name ]
 	public static List CheckDropIndex(String command)
 	{
+		List argv = new ArrayList();
+		//push the op code as first argument
+		argv.add("2");
 		
+		//then get the index name
+		//skip all spaces
+		int i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		
+		//then get the index name
+		i = 0;
+		while((command.charAt(i) <= 'z' && command.charAt(i) >= 'a') || (command.charAt(i) <= 'Z' && command.charAt(i) >= 'A') || command.charAt(i) == '_' || 
+									(command.charAt(i) <= '9' && command.charAt(i) >= '0')) i++;
+		String index_name = command.substring(0, i);
+		command = command.substring(i);
+		
+		//check if index_name = null;
+		if(index_name.equals(""))
+		{
+			System.out.println("Syntax Error! Index name can not be empty !");
+			return null;
+		}
+		
+		//index name is valid
+		if(IsValidName(index_name))
+		{
+			//check if followed by ;
+			for(i = 0; i < command.indexOf(';'); i++)
+			{
+				if(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n')
+				{
+					System.out.println("Syntax Error! After index name expect nothing!");
+					return null;
+				}
+			}
+			//add the argument index_name
+			argv.add(index_name);
+			return argv;
+		}
 		return null;
 	}
 	
 	//return LIST and first argv is 3
+	//argument format [ 3, table_name]
 	public static List CheckDropTable(String command)
 	{
+		List argv = new ArrayList();
+		//push the op code as first argument
+		argv.add("3");
 		
+		//then get the table name
+		//skip all spaces
+		int i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		
+		//then get the table name
+		i = 0;
+		while((command.charAt(i) <= 'z' && command.charAt(i) >= 'a') || (command.charAt(i) <= 'Z' && command.charAt(i) >= 'A') || command.charAt(i) == '_' || 
+									(command.charAt(i) <= '9' && command.charAt(i) >= '0')) i++;
+		String table_name = command.substring(0, i);
+		command = command.substring(i);
+		
+		//check if index_name = null;
+		if(table_name.equals(""))
+		{
+			System.out.println("Syntax Error! Table name can not be empty !");
+			return null;
+		}
+		
+		//index name is valid
+		if(IsValidName(table_name))
+		{
+			//check if followed by ;
+			for(i = 0; i < command.indexOf(';'); i++)
+			{
+				if(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n')
+				{
+					System.out.println("Syntax Error! After table name expect nothing!");
+					return null;
+				}
+			}
+			//add the argument index_name
+			argv.add(table_name);
+			return argv;
+		}
 		return null;
 	}
 	
@@ -311,7 +397,6 @@ public class Interpreter {
 				return false;
 			}
 		}
-		
 		return true;
 	}
 }
