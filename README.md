@@ -19,7 +19,7 @@
 		);
 		arguments: []
 						
-		[Doing]
+		[Done]
 		create index 索引名 on 表名 ( 列名 );		
 		arguments: [1, index_name, table_name, column_name]
 
@@ -56,6 +56,6 @@
 		
 
 + 执行 SQL 脚本
-	
+		[Doing]
 		execfile 文件名;
 		arguments: [7, file_name];

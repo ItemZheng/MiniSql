@@ -9,7 +9,7 @@ import com.sun.webkit.ThemeClient;
 import java.util.List;
 import java.util.ArrayList;
 
-import sun.plugin2.message.GetAppletMessage;
+import sun.nio.ch.Net;
 import sun.print.resources.serviceui;
 import sun.security.util.Length;
 
@@ -99,7 +99,7 @@ public class Interpreter {
 		
 		//get first argv
 		i = 0;
-		while((command.charAt(i) <= 'z' && command.charAt(i) >= 'a') || (command.charAt(i) <= 'Z' && command.charAt(i) >= 'A')) i++;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
 		String op = command.substring(0, i).toLowerCase();
 		
 		op = op.toLowerCase();
@@ -114,7 +114,7 @@ public class Interpreter {
 			command = command.substring(i);
 			//get second argv
 			i = 0;
-			while((command.charAt(i) <= 'z' && command.charAt(i) >= 'a') || (command.charAt(i) <= 'Z' && command.charAt(i) >= 'A')) i++;
+			while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
 			String arv1 = command.substring(0, i).toLowerCase();
 			command = command.substring(i);
 			
@@ -143,7 +143,7 @@ public class Interpreter {
 			command = command.substring(i);
 			//get second argv
 			i = 0;
-			while((command.charAt(i) <= 'z' && command.charAt(i) >= 'a') || (command.charAt(i) <= 'Z' && command.charAt(i) >= 'A')) i++;
+			while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
 			String arv1 = command.substring(0, i).toLowerCase();
 			command = command.substring(i);
 			
@@ -218,7 +218,109 @@ public class Interpreter {
 	 * */
 	public static List CheckCreateIndex(String command)
 	{
+		//add the op code 1
+		List argv = new ArrayList();
+		argv.add("1");
 		
+		//skip all spaces and get next argument
+		int i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		i = 0;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
+		String index_name = command.substring(0, i);
+		command = command.substring(i);
+		
+		//check the index name
+		if(!IsValidName(index_name))
+		{
+			return null;
+		}
+		//index name is OK, add it
+		argv.add(index_name);
+		
+		//Next: on
+		i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		i = 0;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
+		String on = command.substring(0, i);
+		command = command.substring(i);
+		if(!on.equals("on"))
+		{
+			System.out.println("Syntax Error! Expect \"on\"!");
+			return null;
+		}
+		// on is OK
+		
+		//Next: table name
+		i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		i = 0;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';' && command.charAt(i) != '(') i++;
+		String table_name = command.substring(0, i);
+		command = command.substring(i);
+		//check the table name
+		if(!IsValidName(table_name))
+		{
+			return null;
+		}
+		//table name is OK, add it
+		argv.add(table_name);
+		
+		//Next: (
+		//skip all space
+		i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);			//command's length always larger than 1 because of the ";"
+		if(!(command.charAt(0) == '('))
+		{
+			System.out.println("Syntax Error! Expect \"(\"!");
+			return null;
+		}
+		//( is OK
+		command = command.substring(1);
+		
+		//Next: column name
+		i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		i = 0;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';' && command.charAt(i) != ')') i++;
+		String column_name = command.substring(0, i);
+		command = command.substring(i);
+		//check the column name
+		if(!IsValidName(column_name))
+		{
+			return null;
+		}
+		//column name is OK, add it
+		argv.add(column_name);
+		
+		//Next: )
+		//skip all space
+		i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);			//command's length always larger than 1 because of the ";"
+		if(!(command.charAt(0) == ')'))
+		{
+			System.out.println("Syntax Error! Expect \")\"!");
+			return null;
+		}
+		// ( is OK, skip it
+		command = command.substring(1);
+		
+		//Next: ;
+		i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);			//command's length always larger than 1 because of the ";
+		if((command.charAt(0) == ';'))	//the command is OK, valid
+		{
+			return argv;
+		}
+		System.out.println("Syntax Error! After \")\" expect nothing!");
 		return null;
 	}
 	
@@ -238,17 +340,9 @@ public class Interpreter {
 		
 		//then get the index name
 		i = 0;
-		while((command.charAt(i) <= 'z' && command.charAt(i) >= 'a') || (command.charAt(i) <= 'Z' && command.charAt(i) >= 'A') || command.charAt(i) == '_' || 
-									(command.charAt(i) <= '9' && command.charAt(i) >= '0')) i++;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
 		String index_name = command.substring(0, i);
 		command = command.substring(i);
-		
-		//check if index_name = null;
-		if(index_name.equals(""))
-		{
-			System.out.println("Syntax Error! Index name can not be empty !");
-			return null;
-		}
 		
 		//index name is valid
 		if(IsValidName(index_name))
@@ -285,8 +379,7 @@ public class Interpreter {
 		
 		//then get the table name
 		i = 0;
-		while((command.charAt(i) <= 'z' && command.charAt(i) >= 'a') || (command.charAt(i) <= 'Z' && command.charAt(i) >= 'A') || command.charAt(i) == '_' || 
-									(command.charAt(i) <= '9' && command.charAt(i) >= '0')) i++;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';')  i++;
 		String table_name = command.substring(0, i);
 		command = command.substring(i);
 		
@@ -344,6 +437,13 @@ public class Interpreter {
 	public static boolean IsValidName(String name)
 	{
 		//almost all key word
+		
+		if(name.equals(""))
+		{
+			System.out.println("Table name or index name or cloumn name can not be empty!");
+			return false;
+		}
+			
 		String [] KeyWord = {
 				"char", "varchar", "int", "smallint", "numeric", "real", "double", "precision", "float",
 				"primary", "key", "not", "null", "foreign", "references", "create", "table", "insert", "into",
@@ -370,7 +470,7 @@ public class Interpreter {
 		char firstCh = name.charAt(0);
 		if(!((firstCh >= 'a' && firstCh <= 'z') || (firstCh >= 'A' && firstCh <= 'Z') || firstCh == '_'))
 		{
-			System.out.println("Invalid table name or index name or cloumn name!");
+			System.out.println(name + " is an invalid table name or index name or cloumn name!");
 			return false;
 		}
 		
@@ -393,7 +493,7 @@ public class Interpreter {
 			else 
 			{
 				//some char is not OK
-				System.out.println("Invalid table name or index name or cloumn name!");
+				System.out.println(name + " is an invalid table name or index name or cloumn name!");
 				return false;
 			}
 		}
