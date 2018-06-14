@@ -1,8 +1,8 @@
 # DatabaseSummerProject
 
-####① Interpreter
+###  ① Interpreter ###
 
-######功能：
+####功能：####
 + 检查用户输入的语法，如果正确，转化为参数，调用API；错误，则直接给出语法层次的错误信息。
 
 	API 接口：
