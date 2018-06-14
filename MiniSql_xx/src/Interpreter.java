@@ -1,17 +1,5 @@
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import javax.print.attribute.standard.PrinterLocation;
-
-import org.w3c.dom.stylesheets.LinkStyle;
-
-import com.sun.webkit.ThemeClient;
-
-import java.util.List;
-import java.util.ArrayList;
-
-import sun.nio.ch.Net;
-import sun.print.resources.serviceui;
-import sun.security.util.Length;
+import java.io.*;
+import java.util.*;
 
 public class Interpreter {
 	
@@ -35,7 +23,6 @@ public class Interpreter {
 			System.out.print("Minisql->");
 			//read the ; and execute
 			String command = "";
-			String oldCommand = "";
 			try {
 				//read a line
 				BufferedReader s = new BufferedReader(new InputStreamReader(System.in));
@@ -68,16 +55,108 @@ public class Interpreter {
 				//quit
 				break;
 			}
+			else if( argv.get(0).equals("7"))
+			{
+				//execute file
+				String filename = argv.get(1).toString();
+				//System.out.println(filename);
+				List commands = GetCommandInFile(filename);
+				if(commands != null)
+				{
+					System.out.println("Get " + commands.size() +" commands!\n");
+					int i = 0, count = 0;
+					boolean quit = false;
+					for(i = 0; i < commands.size(); i++)
+					{
+						String cmd = commands.get(i).toString();
+						System.out.println("Execute command : " + cmd.substring(0, cmd.length()-1) + " ...");
+						//check the command!
+						argv = CheckSyntax(cmd);
+						if(argv != null)
+						{
+							count = count + 1;
+							if(argv.get(0).toString().equals("quit"))
+							{
+								quit = true;
+							}
+							//api interface
+							//Api(argv);
+							System.out.println("Execute successfully!");
+							//if success
+							
+							if(quit)
+							{
+								break;
+							}
+							
+						}
+						System.out.println();
+					}
+					System.out.println("Finish execute commands! There are " + commands.size() + " commands totally and " + count + 
+										" commands successfully! ");
+					if(quit)
+					{
+						//quit
+						break;
+					}
+				}
+			}
 			else {
 				//api interface
 				//Api(argv);
 				System.out.println(argv);
 			}
-			oldCommand = command;
 		}
 		
 		System.out.println("Bye~");
 	}
+	
+	public static List GetCommandInFile(String filename)
+	{
+		String content = "";
+        try {
+                String encoding="UTF-8";
+                File file = new File(filename);
+                InputStreamReader read = new InputStreamReader(new FileInputStream(file),encoding); //encode type
+                BufferedReader bufferedReader = new BufferedReader(read);
+                String lineTxt = null;
+                while((lineTxt = bufferedReader.readLine()) != null){
+                    content = content + " " + lineTxt;
+                }
+                read.close();
+        }catch (Exception e) {
+        	System.out.println("Error in read file!");
+            return null;
+        }
+        
+        //not have any command
+        if(content.equals("")) {
+        	System.out.println("This file does not has any command !");
+        	return null;
+        }
+        
+        //get all commands and end with ;
+        List commands = new ArrayList();
+        //there is an ;
+        while(content.indexOf(";") != -1)
+        {
+        	//spilt commands
+        	String newCommand = content.substring(0, content.indexOf(";") + 1);
+        	content = content.substring(content.indexOf(";") + 1);
+        	
+        	int i = 0;
+    		while(newCommand.charAt(i) == ' ' || newCommand.charAt(i) == '\t' || newCommand.charAt(i) == '\n') i++;
+    		newCommand = newCommand.substring(i);
+        	commands.add(newCommand);
+        }
+        
+        if(commands.isEmpty()){
+        	System.out.println("This file does not has any valid command !");
+        	return null;
+        }
+		return commands;
+	}
+	
 	public static List CheckSyntax(String command)
 	{
 		//Check if end with ;
@@ -194,7 +273,7 @@ public class Interpreter {
 		}
 		else if(op.equals("execfile"))
 		{
-			
+			return CheckExecuteFile(command);
 		}
 		else 
 		{
@@ -428,9 +507,55 @@ public class Interpreter {
 	}
 	
 	//return LIST and first argv is 7
+	//argument format [7, filename]
 	public static List CheckExecuteFile(String command)
 	{
 		
+		//add the op code 7
+		List argv = new ArrayList();
+		argv.add("7");
+				
+		//skip all spaces and get next argument
+		int i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		i = 0;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
+		String file_name = command.substring(0, i);
+		command = command.substring(i);
+		
+		//only check if is null
+		if(file_name.equals(null))
+		{
+			System.out.println("Syntax Error! Expect file name!");
+			return null;
+		}
+		
+		//Check file name if OK
+		File file = new File(file_name);
+		if(!file.exists())
+		{
+			System.out.println("File do not exist!");
+			return null;
+		}
+		if(!file.isFile())
+		{
+			System.out.println("Not a file !");
+			return null;
+		}
+		//this file is OK
+		//add it 
+		argv.add(file_name);
+		
+		//Next: Check ;
+		i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);			//command's length always larger than 1 because of the ";
+		if((command.charAt(0) == ';'))	//the command is OK, valid
+		{
+			return argv;
+		}
+		System.out.println("Syntax Error! After \")\" expect nothing!");
 		return null;
 	}
 	
@@ -440,7 +565,7 @@ public class Interpreter {
 		
 		if(name.equals(""))
 		{
-			System.out.println("Table name or index name or cloumn name can not be empty!");
+			System.out.println("Syntax Error! Table name or index name or cloumn name can not be empty!");
 			return false;
 		}
 			
@@ -458,7 +583,7 @@ public class Interpreter {
 			//can not be key word of SQL
 			if(name.toLowerCase().equals(KeyWord[i]))
 			{
-				System.out.println("Table name or index name or cloumn name can not be " + name + "!");
+				System.out.println("Syntax Error! Table name or index name or cloumn name can not be " + name + "!");
 				return false;
 			}
 		}
@@ -470,7 +595,7 @@ public class Interpreter {
 		char firstCh = name.charAt(0);
 		if(!((firstCh >= 'a' && firstCh <= 'z') || (firstCh >= 'A' && firstCh <= 'Z') || firstCh == '_'))
 		{
-			System.out.println(name + " is an invalid table name or index name or cloumn name!");
+			System.out.println("Syntax Error!" + name + " is an invalid table name or index name or cloumn name!");
 			return false;
 		}
 		
@@ -493,7 +618,7 @@ public class Interpreter {
 			else 
 			{
 				//some char is not OK
-				System.out.println(name + " is an invalid table name or index name or cloumn name!");
+				System.out.println("Syntax Error!" + name + " is an invalid table name or index name or cloumn name!");
 				return false;
 			}
 		}

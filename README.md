@@ -10,7 +10,7 @@
 
 + 支持的SQL语法：
 		
-	
+
 		create table 表名 (
 			列名 类型 ,
 			列名 类型 ,
@@ -57,6 +57,6 @@
 
 + 执行 SQL 脚本
 		
-		[Doing]
+		[Done]
 		execfile 文件名;
 		arguments: [7, file_name];
