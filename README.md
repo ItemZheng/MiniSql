@@ -10,14 +10,27 @@
 
 + 支持的SQL语法：
 		
-
+		[Doing]
 		create table 表名 (
 			列名 类型 ,
 			列名 类型 ,
 			列名 类型 ,
 			primary key ( 列名 )
 		);
-		arguments: []
+		arguments: [0, table_name, colomn_number, 
+					col1_name, col1_type, col1_is_unique,
+					col2_name, col2_type, col2_is_unique,
+					....
+					primary_key1, primary_key2,.....	
+					]
+		for example: 	create table book( 
+							bno int, 
+							bname char(8) unique, 
+							price int, 
+							primary key(bno)
+						);
+		and its arguments:	[0, book, 3,   bno, int, 0,  bname, char8, 1,  price, int, 0,  0]		
+
 						
 		[Done]
 		create index 索引名 on 表名 ( 列名 );		
