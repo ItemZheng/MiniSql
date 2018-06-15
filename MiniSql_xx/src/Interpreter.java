@@ -494,10 +494,155 @@ public class Interpreter {
 		return null;
 	}
 	
+
 	//return LIST and first argv is 5
 	public static List CheckInsert(String command)
 	{
+		List argv = new ArrayList();
+		//push the op code as first argument
+		argv.add("5");
+		
+		//check  "into"
+		int i = 0;
+		//skip all spaces
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		//get the first argv
+		i = 0;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
+		String arv1 = command.substring(0, i).toLowerCase();
+		command = command.substring(i);
+		if(arv1.equals("into"))
+		{	
+			i = 0;
+			while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+			command = command.substring(i);
+			//then get the table name
+			i = 0;
+			while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';')  i++;
+			String table_name = command.substring(0, i);
+			command = command.substring(i);
+			
+			//check if table_name = null;
+			if(table_name.equals(""))
+			{
+				System.out.println("Syntax Error! Table name can not be empty !");
+				return null;
+			}
+			if(table_name.toLowerCase().equals("values"))
+			{
+				System.out.println("Syntax Error! Table name can not be empty !");
+				return null;
+			}
+			
+			//index name is valid
+			if(IsValidName(table_name))
+			{
+				//check if followed by "values";
+				i=0;
+				//skip all spaces
+				while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+				command = command.substring(i);
+				//get the second argv
+				i = 0;
+				while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';' &&command.charAt(i) != '(' ) i++;
+				String arv2 = command.substring(0, i).toLowerCase();
+				command = command.substring(i);
+				if(arv2.equals("values"))
+				{	
+					i=0;
+                    int start=command.indexOf('(');
+                    if(start ==-1 )
+                    {
+        				System.out.println("Syntax Error! Missing '(' !");
+        				return null;
+                    }
+                    int end =command.indexOf(')');
+                    if(end  == -1 )
+                    {
+        				System.out.println("Syntax Error! Missing ')' !");
+        				return null;
+                    }
+                    int  j= start+1;
+                    int k,z;
+                    int values_num=0;
+                    String temp="";
+                    List Valueargv = new ArrayList();
+                    while(j<end) {
+        				//skip all spaces
+        				while(command.charAt(j) == ' ' || command.charAt(j) == '\t' || command.charAt(j) == '\n') j++;
+        				if(command.charAt(j)=='\'')
+        				{
+        					k=j+1;
+        					while(command.charAt(k) != '\'') 
+        					{
+        						k++;
+        						if(k>=end) {
+        	        				System.out.println("Syntax Error! Missing the right''' in a string !");
+        	        				return null;
+        						}
+        					}
+        					temp = command.substring(j+1, k);
+        					values_num++;
+        					Valueargv.add(temp);
+        					Valueargv.add("1");// the value is string
+        					k++;
+
+        				}
+        				else if(command.charAt(j)>='0'&& command.charAt(j)<='9' ){
+        					k=j;
+        					while(command.charAt(k)>='0'&& command.charAt(k)<='9') k++;
+        					temp =command.substring(j,k);
+        					values_num++;
+        					Valueargv.add(temp);
+        					Valueargv.add("0");
+        				}
+        				else {
+        					System.out.println("Syntax Error! the value is neither int, float, or char!");
+    						return null;
+      
+        				}
+        				
+    					z=k;
+    					//skip all spaces
+        				while(command.charAt(k) == ' ' || command.charAt(k) == '\t' || command.charAt(k) == '\n') k++;
+        				if(command.charAt(k)== ',' )
+        				{
+        					j= k+1;
+        					continue;
+        				}
+        				else {
+        					if(k ==end) break;
+        					else { 
+        						System.out.println("Syntax Error! Missing the ','  after a value!");
+        						return null;
+        					}
+        				}
+                    }
+                 	if(values_num ==0) { 
+						System.out.println("Syntax Error! value is none!");
+						return null;
+					}
+                 		
+					//add the argument 
+					argv.add(table_name);
+					argv.add(String.valueOf(values_num));
+					argv.addAll(Valueargv);
+					System.out.println("Syntaz correct for inserting!");
+					return argv;
+				}
+				else {
+					System.out.println("Syntax Error! Missing 'values' after the table name!");
+					return null;			
+				}
+			}
+		}
+		else {
+			System.out.println("Syntax Error! Missing 'into' after 'insert' !");
+			return null;
+		}
 		return null;
+		
 	}
 	
 	//return LIST and first argv is 6
