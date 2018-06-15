@@ -1,6 +1,7 @@
 import java.io.*;
 import java.util.*;
 
+
 public class Interpreter {
 	
 	public static void main(String[] args) {
@@ -281,14 +282,7 @@ public class Interpreter {
 		}
 		return null;
 	}
-	
-	//return LIST and first argv is 0
-	public static List CheckCreateTable(String command)
-	{
-		List argv = new ArrayList();
-		
-		return null;
-	}
+
 	
 	//return LIST and first argv is 1
 	/*
@@ -324,7 +318,7 @@ public class Interpreter {
 		command = command.substring(i);
 		i = 0;
 		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
-		String on = command.substring(0, i);
+		String on = command.substring(0, i).toLowerCase();
 		command = command.substring(i);
 		if(!on.equals("on"))
 		{
@@ -769,4 +763,247 @@ public class Interpreter {
 		}
 		return true;
 	}
+
+	//return LIST and first argv is 0
+	/*
+	 * 	argument: [0, table_name, colomn_number, 
+	 * 				col1_name, col1_type, col1_is_unique,
+	 * 				col2_name, col2_type, col2_is_unique,....
+	 * 				primary_key1, primary_key2,.....]
+	 * */
+	public static List CheckCreateTable(String command)
+	{
+		List argv = new ArrayList();
+		//add operation code 0
+		argv.add("0");
+		
+		//First : table name
+		//skip all space first
+		int i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		//get the table name
+		i = 0;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';' && command.charAt(i) != '(')  i++;
+		String table_name = command.substring(0, i);
+		command = command.substring(i);
+		//check the table name
+		if(!IsValidName(table_name))
+		{
+			return null;
+		}
+		//the name is OK, add it
+		argv.add(table_name);
+		
+		//Next: (
+		//skip all space
+		i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		//check
+		if(command.charAt(0) != '(') {
+			System.out.println("Syntax Error! Expect \"(\"!");
+			return null;
+		}
+		//OK
+		command = command.substring(1);
+		
+		//Next get the column info
+		List col = new ArrayList();
+		List primary_Key = new ArrayList();
+		int col_num = -1;		//number of columns
+		boolean appear_primary = false;		//the primary key is allowed to appear only once
+		while(true)
+		//means there are more cols
+		{
+			//Next: column name
+			i = 0;
+			while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+			command = command.substring(i);
+			i = 0;
+			while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ',') i++;
+			String cmd1 = command.substring(0, i);
+			command = command.substring(i);
+			/*
+			 * cmd1: two possible
+			 * (1)	a new col
+			 * (2)  to describe the primary key
+			 */
+			
+			if(cmd1.toLowerCase().equals("primary"))
+			{
+				
+			}
+			//new column 
+			else
+			{
+				col_num++;
+				String col_name, type, isUnique = "0";
+				col_name = cmd1;
+				//check the col_name
+				if(IsValidName(col_name))
+				{
+					return null;
+				}
+				//OK, add it
+				col.add(col_name);
+				
+				//Next: type
+				//possible type: int  char(n)   float
+				//get type
+				i = 0;
+				while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+				command = command.substring(i);
+				i = 0;
+				while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ',' && command.charAt(i) != '(') i++;
+				type = command.substring(0, i).toLowerCase();
+				command = command.substring(i);
+				//check the type
+				if(type.equals("int")){
+					//integer, OK
+					type = "int";
+				}
+				else if(type.equals("float")){
+					//float, OK
+					type = "float";
+				}
+				else{
+					//check "char"
+					if(type.indexOf("char") == -1)
+					{
+						System.out.println("Syntax Error! " + type + " is not an valid type! ");
+						return null;
+					}
+					
+					//check if the first 4 letter equals "char"
+					if(!type.substring(0,4).equals("char"))
+					{
+						System.out.println("Syntax Error! " + type + " is not an valid type! ");
+						return null;
+					}
+					
+					type = "char";
+					
+					//skip all space
+					i = 0;
+					while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+					command = command.substring(i);
+					
+					//means char(n)
+					if(command.charAt(0) == '(')
+					{
+						//spilt (
+						command = command.substring(1);
+						
+						//skip all space
+						i = 0;
+						while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+						command = command.substring(i);
+						
+						//follow should be numbers
+						i = 0;
+						while(command.charAt(i) <= '9' && command.charAt(i) >= '0')		i++;
+						String n = command.substring(0, i);
+						command = command.substring(i);
+						// n is the number of chars
+						//check n
+						if(n.equals(""))
+						{
+							System.out.println("Syntax Error! Type char(n) and n is expected to be a interger!");
+							return null;
+						}
+						
+						//skip all space and check the )
+						i = 0;
+						while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+						command = command.substring(i);
+						if(command.charAt(0) != ')')
+						{
+							System.out.println("Syntax Error! Expected \"(\" of type char(n) !");
+							return null;
+						}
+						//OK 
+						command = command.substring(1);
+						type = type + n;   //"char n"
+					}
+					else
+					{
+						type = type + "0";  //"char 0"
+					}
+				}
+				//type is OK, add it to col
+				col.add(type);
+				
+				//Next: check if is unique
+				//get next argument
+				//skip all space
+				i = 0;
+				while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+				command = command.substring(i);
+				//check if end
+				if(command.charAt(0) == ',')
+				{
+					//this definition end
+					command = command.substring(1);
+					//not unique,add it
+					isUnique = "0";
+					col.add(isUnique);
+					continue;
+				}
+				//not ","
+				i = 0;
+				while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ',') i++;
+				String argu = command.substring(0, i);
+				command = command.substring(i);
+				if(argu.toLowerCase().equals("unique"))
+				{
+					isUnique = "1";
+					col.add(isUnique);
+				}
+				else
+				{
+					col.add(isUnique);  //is unique = 0
+					
+					//check if the primary key
+					if(argu.toLowerCase().equals("primary"))
+					{
+						//then must check key
+						//skip all spaces
+						i = 0;
+						while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+						command = command.substring(i);
+						i = 0;
+						while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ',') i++;
+						argu = command.substring(0, i);
+						command = command.substring(i);
+						
+						if(!argu.toLowerCase().equals("key")) {
+							System.out.println("Syntax Error! \"Key\" is expected after primary!");
+							return null;
+						}
+						//primary key is OK
+						//primary only appear once
+						if(appear_primary){
+							System.out.println("Syntax Error! Primary key should appear only once!");
+							return null;
+						}
+						else{
+							appear_primary = true;
+						}
+						primary_Key.add(col_name);
+					}
+					else
+					{
+						System.out.println("Syntax Error! " + argu + " can not be recognized! ");
+						return null;
+					}
+				}
+			}
+			
+		}
+		
+		
+		//return null;
+	}
+
 }

@@ -29,7 +29,7 @@
 							price int, 
 							primary key(bno)
 						);
-		and its arguments:	[0, book, 3,   bno, int, 0,  bname, char8, 1,  price, int, 0,  0]		
+		and its arguments:	[0, book, 3,   bno, int, 0,  bname, char8, 1,  price, int, 0,  bno]		
 
 						
 		[Done]
