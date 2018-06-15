@@ -1,6 +1,8 @@
 import java.io.*;
 import java.util.*;
 
+import jdk.vm.ci.aarch64.AArch64.Flag;
+
 public class Interpreter {
 	
 	public static void main(String[] args) {
@@ -909,10 +911,111 @@ public class Interpreter {
 	//return LIST and first argv is 4
 	public static List CheckSelect(String command)
 	{
-		return null;
+		//add op code 4
+		List argv = new ArrayList();
+		argv.add("4");
+		//skip all spaces
+		int i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		
+		//get the column name
+		int column_num = 0;
+		List col_names = new ArrayList();
+		if(command.charAt(0) == '*') {
+			column_num = 0;
+			command = command.substring(1);
+		}else {
+			while(true) {
+				//skip all spaces
+				i = 0;
+				while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+				command = command.substring(i);
+				
+				//list all column name
+				i = 0;
+				column_num++;
+				while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';' && command.charAt(i) != ',') i++;
+				String col_name = command.substring(0, i);
+				command = command.substring(i);
+				
+				//check the col_name
+				if(!IsValidName(col_name)) {
+					return null;
+				}
+				col_names.add(col_name);
+				
+				//skip all spaces
+				i = 0;
+				while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+				command = command.substring(i);
+				if(command.charAt(0) != ',') {
+					//end 
+					break;
+				}else {
+					// == ','
+					command = command.substring(1);
+				}
+			}
+		}
+		
+		//column number is OK
+		//check: from
+		//skip all spaces
+		i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		i = 0;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
+		String from = command.substring(0, i);
+		command = command.substring(i);
+		if(!from.toLowerCase().equals("from")){
+			System.out.println("Syntax Error! Expected from!");
+			return null;
+		}
+		
+		//get the table
+		//skip all spaces
+		i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		i = 0;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
+		String table_name = command.substring(0, i);
+		command = command.substring(i);
+		if(!IsValidName(table_name)){
+			return null;
+		}
+		
+		//get the where
+		i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		i = 0;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
+		String where = command.substring(0, i);
+		command = command.substring(i);
+		if(!where.toLowerCase().equals("where")){
+			System.out.println("Syntax Error! Expected where!");
+			return null;
+		}
+		
+		List conditions = CheckConditions(command);
+		if(conditions == null) {
+			return null;
+		}
+		
+		argv.add(table_name);
+		argv.add(column_num + "");
+		for(i = 0; i < column_num; i++) {
+			argv.add(col_names.get(i));
+		}
+		for(i = 0; i < conditions.size(); i++) {
+			argv.add(conditions.get(i));
+		}
+		return argv;
 	}
 	
-
 	//return LIST and first argv is 5
 	public static List CheckInsert(String command)
 	{
@@ -996,7 +1099,7 @@ public class Interpreter {
         					{
         						k++;
         						if(k>=end) {
-        	        				System.out.println("Syntax Error! Missing the right''' in a string !");
+        	        				System.out.println("Syntax Error! Missing the right \' in a string !");
         	        				return null;
         						}
         					}
@@ -1064,9 +1167,63 @@ public class Interpreter {
 	}
 	
 	//return LIST and first argv is 6
+	//similar to select
 	public static List CheckDelete(String command)
 	{
-		return null;
+		List argv = new ArrayList();
+		//push the op code as first argument
+		argv.add("6");
+
+		//check: from
+		//skip all spaces
+		int i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		i = 0;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
+		String from = command.substring(0, i);
+		command = command.substring(i);
+		if(!from.toLowerCase().equals("from")){
+			System.out.println("Syntax Error! Expected from!");
+			return null;
+		}
+				
+		//get the table
+		//skip all spaces
+		i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		i = 0;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
+		String table_name = command.substring(0, i);
+		command = command.substring(i);
+		if(!IsValidName(table_name)){
+			return null;
+		}
+		//table name is OK
+		argv.add(table_name);
+		
+		//get the where
+		i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		i = 0;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
+		String where = command.substring(0, i);
+		command = command.substring(i);
+		if(!where.toLowerCase().equals("where")){
+			System.out.println("Syntax Error! Expected where!");
+			return null;
+		}
+		
+		List conditions = CheckConditions(command);
+		if(conditions == null) {
+			return null;
+		}
+		for(i = 0; i < conditions.size(); i++) {
+			argv.add(conditions.get(i));
+		}
+		return argv;
 	}
 	
 	//return LIST and first argv is 7
@@ -1184,6 +1341,133 @@ public class Interpreter {
 				System.out.println("Syntax Error!" + name + " is an invalid table name or index name or cloumn name!");
 				return false;
 			}
+		}
+		return true;
+	}
+
+	public static List CheckConditions(String command)
+	{
+		List cons = new ArrayList();
+		//skip all space and check it is no condition
+		int i = 0;
+		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+		command = command.substring(i);
+		if(command.charAt(0) == ';') {
+			cons.add("0");
+			//no any condition
+			return cons;
+		}
+		
+		int con_num = 0;
+		while(true)
+		{
+			con_num ++;
+			//skip all spaces and get next argument
+			i = 0;
+			while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+			command = command.substring(i);
+			i = 0;
+			while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';'
+					&& command.charAt(i) != '<' && command.charAt(i) != '=' && command.charAt(i) != '>')	i++;
+			String col_name = command.substring(0, i);
+			command = command.substring(i);
+			//check the col_name
+			if(!IsValidName(col_name))
+			{
+				return null;
+			}
+			//OK, and add it
+			cons.add(col_name);
+			
+			//get the operation
+			//skip spaces
+			i = 0;
+			while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+			command = command.substring(i);
+			i = 0;
+			while(command.charAt(i) == '=' || command.charAt(i) == '>' || command.charAt(i) == '<') i++;
+			String op = command.substring(0, i);
+			command = command.substring(i);
+			//check op
+			if(!(op.equals("<") || op.equals("=") || op.equals(">") || op.equals(">=") || op.equals("<=") || op.equals("<>"))) {
+				System.out.println("Syntax Error! Can't find valid operation near " + col_name + "!");
+				return null;
+			}
+			cons.add(op);
+			
+			//check the value
+			String value = "", type = "";
+			//skip spaces
+			i = 0;
+			while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+			command = command.substring(i);
+			if(command.charAt(0) == '\'') {
+				//a string
+				command = command.substring(1);
+				int index = command.indexOf("\'");
+				if(index == -1)
+				{
+					//can not find another '
+					System.out.println("Syntax Error! Missing the right \' in a string !");
+    				return null;
+				}
+				//find \'
+				value = command.substring(0, index);
+				command = command.substring(index+1);
+				cons.add(value);
+				type = "1"; //is string
+				cons.add(type);
+			}else {
+				//should be number
+				type = "0";
+				i = 0;
+				while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';')	i++;
+				value = command.substring(0, i);
+				command = command.substring(i);
+				//check if value is a number
+				if(!IsNumric(value)) {
+					return null;
+				}
+				//is number
+				cons.add(value);
+				cons.add(type);
+			}
+			//skip all space
+			i = 0;
+			while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+			command = command.substring(i);
+			//check if is and or ;
+			if(command.charAt(0) == ';') {
+				break;
+			}else if(command.toLowerCase().indexOf("and") != -1){
+				if(command.substring(0, 3).toLowerCase().equals("and")) {
+					//another condition
+					command = command.substring(3);
+					continue;
+				}else {
+					System.out.println("Syntax Error! Unrecognized symbol near " + value + " !");
+    				return null;
+				}
+			}else {
+				System.out.println("Syntax Error! Unrecognized symbol near " + value + " !");
+				return null;
+			}
+		}
+		List conditions = new ArrayList();
+		conditions.add(con_num+"");
+		for(i = 0; i < cons.size(); i++) {
+			conditions.add(cons.get(i));
+		}
+		return conditions;
+	}
+	
+	public static boolean IsNumric(String value){
+		//check if all number or '.'
+		try {
+			 float f = Float.parseFloat(value);
+		}catch(Exception e) {
+			System.out.println(value + " is not a number!");
+			return false;
 		}
 		return true;
 	}

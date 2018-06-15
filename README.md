@@ -45,28 +45,32 @@
 		drop table 表名;
 		arguments: [3, table_name]		
 
-		[Doing]
+		[Done]
 		select * from 表名 ;
 		或：
 		select * from 表名 where 条件 ;
 		arguments: [4, table_name, col_num, col1, col2, col3.....
 					condition_num, left1, op1, right1, right_isString1....]
 					if col_num == 0 means all
-		e.g. 	select * from student where sage > 20 and sgender = ‘F’;
+		e.g. 	select * from student where sage > 20 and sgender = 'F';
 				[ 4, student, 0,  2, sage, >, 20, 0, sgender, =, F, 1]		
 		
-		[Done]
+		[Doing]
 		insert into 表名 values ( 值1 , 值2 , … , 值n );
 		arguments: [5, table_name, values_num,
 					value1, isString, .....]	
 		e.g	insert inTO student vALues ('12345678','wy',22,'M');
 		
 		
-		[Doing]
+		[Done]
 		delete from 表名 ;
 		或：
 		delete from 表名 where 条件 ;
-		arguments: []
+		arguments: [6, table_name, condition_num, left1, op1, right1, right_isString1....]
+					if col_num == 0 means all
+		e.g. 	delete from student where sage > 20 and sgender = 'F';
+				[ 6, student, 2, sage, >, 20, 0, sgender, =, F, 1]	
+		
 
 + 退出
 		
