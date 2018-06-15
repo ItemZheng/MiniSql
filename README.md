@@ -49,8 +49,11 @@
 		select * from 表名 ;
 		或：
 		select * from 表名 where 条件 ;
-		arguments: []	
-		
+		arguments: [4, table_name, col_num, col1, col2, col3.....
+					condition_num, left1, op1, right1, right_isString1....]
+					if col_num == 0 means all
+		e.g. 	select * from student where sage > 20 and sgender = ‘F’;
+				[ 4, student, 0,  2, sage, >, 20, 0, sgender, =, F, 1]		
 		
 		[Done]
 		insert into 表名 values ( 值1 , 值2 , … , 值n );
