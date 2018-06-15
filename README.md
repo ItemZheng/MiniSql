@@ -10,7 +10,7 @@
 
 + 支持的SQL语法：
 		
-		[Doing]
+		[Done]
 		create table 表名 (
 			列名 类型 ,
 			列名 类型 ,
@@ -45,7 +45,7 @@
 		drop table 表名;
 		arguments: [3, table_name]		
 
-		
+		[Doing]
 		select * from 表名 ;
 		或：
 		select * from 表名 where 条件 ;
@@ -59,6 +59,7 @@
 		e.g	insert inTO student vALues ('12345678','wy',22,'M');
 		
 		
+		[Doing]
 		delete from 表名 ;
 		或：
 		delete from 表名 where 条件 ;
