@@ -52,10 +52,11 @@
 		arguments: []	
 		
 		
-		[Doing]
+		[Done]
 		insert into 表名 values ( 值1 , 值2 , … , 值n );
 		arguments: [5, table_name, values_num,
 					value1, isString, .....]	
+		e.g	insert inTO student vALues ('12345678','wy',22,'M');
 		
 		
 		delete from 表名 ;
