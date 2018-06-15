@@ -52,8 +52,10 @@
 		arguments: []	
 		
 		
+		[Doing]
 		insert into 表名 values ( 值1 , 值2 , … , 值n );
-		arguments: []	
+		arguments: [5, table_name, values_num,
+					value1, isString, .....]	
 		
 		
 		delete from 表名 ;
