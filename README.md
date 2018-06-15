@@ -55,7 +55,7 @@
 		e.g. 	select * from student where sage > 20 and sgender = 'F';
 				[ 4, student, 0,  2, sage, >, 20, 0, sgender, =, F, 1]		
 		
-		[Doing]
+		[Done]
 		insert into 表名 values ( 值1 , 值2 , … , 值n );
 		arguments: [5, table_name, values_num,
 					value1, isString, .....]	

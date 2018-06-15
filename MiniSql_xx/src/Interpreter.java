@@ -1,8 +1,6 @@
 import java.io.*;
 import java.util.*;
 
-import jdk.vm.ci.aarch64.AArch64.Flag;
-
 public class Interpreter {
 	
 	public static void main(String[] args) {
@@ -1044,18 +1042,6 @@ public class Interpreter {
 			String table_name = command.substring(0, i);
 			command = command.substring(i);
 			
-			//check if table_name = null;
-			if(table_name.equals(""))
-			{
-				System.out.println("Syntax Error! Table name can not be empty !");
-				return null;
-			}
-			if(table_name.toLowerCase().equals("values"))
-			{
-				System.out.println("Syntax Error! Table name can not be empty !");
-				return null;
-			}
-			
 			//index name is valid
 			if(IsValidName(table_name))
 			{
@@ -1072,84 +1058,84 @@ public class Interpreter {
 				if(arv2.equals("values"))
 				{	
 					i=0;
-                    int start=command.indexOf('(');
-                    if(start ==-1 )
-                    {
-        				System.out.println("Syntax Error! Missing '(' !");
+					//skip all spaces
+					while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+					command = command.substring(i);
+					if(!(command.charAt(0) == '(')) {
+						System.out.println("Syntax Error! Missing '(' !");
         				return null;
-                    }
-                    int end =command.indexOf(')');
-                    if(end  == -1 )
-                    {
-        				System.out.println("Syntax Error! Missing ')' !");
-        				return null;
-                    }
-                    int  j= start+1;
-                    int k,z;
-                    int values_num=0;
-                    String temp="";
-                    List Valueargv = new ArrayList();
-                    while(j<end) {
-        				//skip all spaces
-        				while(command.charAt(j) == ' ' || command.charAt(j) == '\t' || command.charAt(j) == '\n') j++;
-        				if(command.charAt(j)=='\'')
-        				{
-        					k=j+1;
-        					while(command.charAt(k) != '\'') 
-        					{
-        						k++;
-        						if(k>=end) {
-        	        				System.out.println("Syntax Error! Missing the right \' in a string !");
-        	        				return null;
-        						}
-        					}
-        					temp = command.substring(j+1, k);
-        					values_num++;
-        					Valueargv.add(temp);
-        					Valueargv.add("1");// the value is string
-        					k++;
-
-        				}
-        				else if(command.charAt(j)>='0'&& command.charAt(j)<='9' ){
-        					k=j;
-        					while(command.charAt(k)>='0'&& command.charAt(k)<='9') k++;
-        					temp =command.substring(j,k);
-        					values_num++;
-        					Valueargv.add(temp);
-        					Valueargv.add("0");
-        				}
-        				else {
-        					System.out.println("Syntax Error! the value is neither int, float, or char!");
-    						return null;
-      
-        				}
-        				
-    					z=k;
-    					//skip all spaces
-        				while(command.charAt(k) == ' ' || command.charAt(k) == '\t' || command.charAt(k) == '\n') k++;
-        				if(command.charAt(k)== ',' )
-        				{
-        					j= k+1;
-        					continue;
-        				}
-        				else {
-        					if(k ==end) break;
-        					else { 
-        						System.out.println("Syntax Error! Missing the ','  after a value!");
-        						return null;
-        					}
-        				}
-                    }
-                 	if(values_num ==0) { 
-						System.out.println("Syntax Error! value is none!");
+					}else {
+						command = command.substring(1);
+					}
+					//begin values
+					int values_num=0;
+					List Valueargv = new ArrayList();
+					while(true) {
+						i=0;
+						//skip all spaces
+						while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+						command = command.substring(i);
+						
+						String value, isString;
+						if(command.charAt(0) == '\'') {
+							isString = "1";
+							command = command.substring(1);
+							
+							int index = command.indexOf("\'");
+							if(index == -1) {
+								System.out.println("Syntax Error! Missing the right \' in a string !");
+								return null;
+							}else {
+								//OK
+								value = command.substring(0, index);
+								command = command.substring(index+1);
+							}
+						}else {
+							isString = "0";//number
+							i = 0;
+							while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';'  
+									&& command.charAt(i) != ')'&& command.charAt(i) != ','	)	i++;
+							value = command.substring(0, i);
+							command = command.substring(i);
+							//check if value is a number
+							if(!IsNumric(value)) {
+								return null;
+							}
+						}
+						Valueargv.add(value);
+						Valueargv.add(isString);
+						values_num++;
+						//add ok
+						i=0;
+						//skip all spaces
+						while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+						command = command.substring(i);
+						
+						if(command.charAt(0) == ',') {
+							command = command.substring(1);
+							continue;
+						}else if(command.charAt(0) == ')') {
+							command = command.substring(1);
+							break;
+						}else {
+							System.out.println("Syntax Error! Unrecognized symbol near " + value + " !");
+							return null;
+						}
+					}
+					//add ok
+					i=0;
+					//skip all spaces
+					while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
+					command = command.substring(i);
+					if(command.charAt(0) != ';') {
+						System.out.println("Syntax Error! Expect nothing behind \')\' !");
 						return null;
 					}
-                 		
+					
 					//add the argument 
 					argv.add(table_name);
 					argv.add(String.valueOf(values_num));
 					argv.addAll(Valueargv);
-					System.out.println("Syntaz correct for inserting!");
 					return argv;
 				}
 				else {
@@ -1159,7 +1145,7 @@ public class Interpreter {
 			}
 		}
 		else {
-			System.out.println("Syntax Error! Missing 'into' after 'insert' !");
+			System.out.println("Syntax Error! Missing 'into' !");
 			return null;
 		}
 		return null;
