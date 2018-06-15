@@ -707,8 +707,6 @@ public class Interpreter {
 		}
 		return argv;
 	}
-}
-
 	
 	//return LIST and first argv is 1
 	/*
