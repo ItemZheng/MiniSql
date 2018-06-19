@@ -985,19 +985,6 @@ public class Interpreter {
 			return null;
 		}
 		
-		//get the where
-		i = 0;
-		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
-		command = command.substring(i);
-		i = 0;
-		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
-		String where = command.substring(0, i);
-		command = command.substring(i);
-		if(!where.toLowerCase().equals("where")){
-			System.out.println("Syntax Error! Expected where!");
-			return null;
-		}
-		
 		List conditions = CheckConditions(command);
 		if(conditions == null) {
 			return null;
@@ -1193,14 +1180,7 @@ public class Interpreter {
 		i = 0;
 		while(command.charAt(i) == ' ' || command.charAt(i) == '\t' || command.charAt(i) == '\n') i++;
 		command = command.substring(i);
-		i = 0;
-		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
-		String where = command.substring(0, i);
-		command = command.substring(i);
-		if(!where.toLowerCase().equals("where")){
-			System.out.println("Syntax Error! Expected where!");
-			return null;
-		}
+		
 		
 		List conditions = CheckConditions(command);
 		if(conditions == null) {
@@ -1344,6 +1324,15 @@ public class Interpreter {
 			return cons;
 		}
 		
+		i = 0;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
+		String where = command.substring(0, i);
+		command = command.substring(i);
+		if(!where.toLowerCase().equals("where")){
+			System.out.println("Syntax Error! Expected where!");
+			return null;
+		}
+		
 		int con_num = 0;
 		while(true)
 		{
@@ -1450,7 +1439,7 @@ public class Interpreter {
 	public static boolean IsNumric(String value){
 		//check if all number or '.'
 		try {
-			 float f = Float.parseFloat(value);
+			Float.parseFloat(value);
 		}catch(Exception e) {
 			System.out.println(value + " is not a number!");
 			return false;
