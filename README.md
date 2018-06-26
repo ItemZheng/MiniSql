@@ -87,37 +87,125 @@
 
 ###   ② DB File ###
 
-##### Record FILE #####
+##### Buffer #####
 
-+ Record 存储格式
-	
-		按字节存储
-		如student( id int, name char(3), grade float);
-		每一条在文件中记录，如果两个记录：
-			2332, zyh, 99.0
-			2602, xcl, 99.0
-		则在文件中：
-			前四个字节（int）表示2332，后三个字节（char[3]）表示zyh，然后四个字节（float）表示99.0，共11个字节，
-			接下来11个字节表示第二条记录
   
 + 缓冲区操作
 
 		块大小 4KB = 4048字节 ，缓冲区按块读取或写入文件。
-		每一页设置（待决定）
-		缓冲区大小  512KB， 也就是可以读取128块。
-		读取记录的时候，每次按块的大小读取，普通查找的时候按顺序将所有的块一块块读入缓冲区，直到找到做所
-		需要的记录。注意记录缓冲区中每一块的位置和是否被修改，程序结束的时候要把块协会文件。
+		缓冲区大小  512KB， 也就是可以最大128块。
+
++ 缓冲区结构
 		
-##### Catelog File #####
+		Bufferblock:
+			String 	filename
+			int 	Offset			//offset % 4kb should be zero
+			bool  	isLock
+			Byte    values[4*1024]	//4KB
+			int		Usage 			//to record use time recently
+			byte[]  getValue(int begin, int length);
+			int 	getInt(int pos);   //get four byte
+			char[]  getChar(int pos, int length);
+			float 	getFloat();
+			void    setByte(int pos, Byte [] value);
+			void    setInt(int pos, int value);
+			void    setFloat(int pos, float value);
+			void    setChar(int pos, char[] value);
+		
+		Buffer:
+			Bufferblock		blocks[128];
+			int 	getReplaceBlockID();
+			void 	bufferRead(String fileName, int OfferSet);
+			void    bufferWrite();
+			
+##### DB Files #####
+
++ File Structure
+
+		table.catelog		//save all information of table and its attributes
+		index.catelog 		//save all indexs of all the tables
+		tablename.record	//save all records of the table records
+		indexname.index		//save all information of B+ tree
 	
-+ 存储格式(文本格式即可)
++ 存储格式
 		
-		begin
-		relation_name
-		attribute_num
-		attribute_name    type   isUnique   index_num   index_name1
-		....
-		end
+		table.catelog
+			table1_name
+			attribute_name1    type1   isUnique1  isPrimary1
+			...
+			-1
+		
+		index.catelog
+			index_name	tablename	attributename
+			...
+		
+		tablename.record
+			value1 value2 value3 ...
+		
+		indexname.index
+			value1 value2 value3 offset1 offset2  offset3
+			....
+			
++ Index 结构
+		
+		Index:
+			string 	name
+			string 	table_name
+			string 	attribute_name
+
+
++ Attribute 结构
+		
+		Attribute:
+			int				length
+			String 			name
+			int 			type	
+			bool			isPrimaryKey
+			bool 			isUnique
+		
++ Table 结构
+		
+		Table:
+			int					table_length
+			String 				table_name
+			vector<Attribute>	attributes
+			vector<Index>		
+			bool				isExistIndex(string indexName);
+			Table 	`			tableRead(string tableName);
+			void  				tableWrite(string tableName);
+			bool				isExistTable(string tableName);
++ Leaf 结构
+			
+		Leaf:	
+			value
+			order
+			offset
+
+
++ Node 结构
+		
+		Node:
+			value1 
+			value2
+			value3
+			NodeId 1``
+			NodeId 2
+			NodeId 3
+			NodeId 4
+			Leaf      //if it is inner node, it should be NULL
+
++ B+ Tree结构
+		
+		BplusTree:
+			string 	indexname;
+			vector<Node> nodes;		//all nodes, first node should be rrot
+			vector<Leaf> leaves;
+			void ReadFrom();	// read to buffer,then read buffer to rebuliud a tree
+			void InsertNode(value);
+			void DeleteNode(value);
+			void WriteTo();
+			
+			
 
 ##### Index File #####
 
@@ -132,4 +220,8 @@
 		最后的叶子保存的是每条记录的在record文件中的偏移量，最后可以直接定位到这条记录。
 
 + 操作
+		
 		搜索，插入，删除
+
+
+
