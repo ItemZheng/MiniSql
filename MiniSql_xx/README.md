@@ -115,10 +115,58 @@
 		Buffer:
 			Bufferblock		blocks[128];
 			int 	getReplaceBlockID();
-			void 	bufferRead(String fileName, int OfferSet);
+			int 	bufferRead(String fileName, int OfferSet);
+			
 			void    bufferWrite();
+
+
+
+
+###use###
++ create table
+ 
+		检查table.catelog里tablename存在否，存在报错，不存在就在这里加入此表信息。检查primary key，如果存在就调用建立索引。
+		如果有多个Primary key 则只为第一个建立索引 
++ drop table 表名
+		检查tablename存在否table.catelog.  drop所有该表的index。删除tablename.record 
+		同时也要删除缓冲区的.更新table.catelog。
++ create index
+
+		检查表名列名 ，检查index名字是否在index.catelog存在 。存在报错，
+		不存在就在index.catelog写入一个新的索引。根据这个索引和这个表新建一个B+树 .index文件。
++ drop index
+
+		检查index名字是否在index.catelog存在 。不存在报错，存在就在index.catelog删除索引和相应的 .index 的b+树文件。
+
++ select*/attributes from 表名  (where)
+
+		在table.catelog里判断是不是有这个表。
+		有的话就判断有没有where，没有的话就读出tablename.record，然后根据要求的属性输出。
+		有多个条件的话就判断列名是否存在，再判断某个条件的属性是不是索引，在index.catelog里找。
+		如果是索引，先处理它，去对应的indexname.index里读出符合条件的B+树，若还有条件就再
+		去tablename.record里面找，返回的就是相应的offset（存到一个数组） 
+		再写个函数根据offset数组去tablename.record里找再输出。。
+		没有索引就直接读tablename.record
+
++ insert into 表名 values(value1,value2,value3...)
+
+		检查表名.检查value类型、个数。再检查 Unique，primary（如果primary有多列也要考虑）
+		给缓冲区tablename.record的参数，让缓冲区来写，这条记录直接放在这个.record文件文件的最后
+		所有建过索引的列名  更新对应的B+： 从indexname.index读出、建立B+树结构，再插入新的结点，
+		然后再写入indexname.index
++ delete from 表名 ;
+
+		判断table.catelog中表名是否存在。清空（null）缓冲区的tablename.record
+ 
++ delete from 表名 where 条件 ;
+
+		判断表名、条件的列名存在否。
+		先select对应的操作 返回对应每条记录的offset数组。。
+		按照从大到小的顺序删除记录（删除的同时从这个表的记录的最后一条提上来补充空位。。）
+
 			
 ##### DB Files #####
+
 
 + File Structure
 
@@ -136,10 +184,12 @@
 			-1
 		
 		index.catelog
-			index_name	tablename	attributename
+			index_name	tablename	attributename 
+			-1
 			...
 		
 		tablename.record
+			record_num
 			value1 value2 value3 ...
 		
 		indexname.index
@@ -149,7 +199,7 @@
 + Index 结构
 		
 		Index:
-			string 	name
+			string 	index_name
 			string 	table_name
 			string 	attribute_name
 
@@ -159,7 +209,7 @@
 		Attribute:
 			int				length
 			String 			name
-			int 			type	
+			int 			type //0->int,256->float,1~255->char()
 			bool			isPrimaryKey
 			bool 			isUnique
 		
@@ -169,7 +219,7 @@
 			int					table_length
 			String 				table_name
 			vector<Attribute>	attributes
-			vector<Index>		
+			vector<Index>		indexes
 			bool				isExistIndex(string indexName);
 			Table 	`			tableRead(string tableName);
 			void  				tableWrite(string tableName);
