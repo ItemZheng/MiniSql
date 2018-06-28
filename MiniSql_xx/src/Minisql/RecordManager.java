@@ -13,4 +13,15 @@ public class RecordManager {
 		}
 		System.out.println("create table successfully in record manager");
 	}
+	public static void Drop_Table(String tableName)
+	{
+		try {
+			String filename= tableName+".table";
+			//Buffer Manager to create a block...
+		}catch (Exception e) {
+			System.err.println(e.getMessage());
+			System.err.println("Failure in record manager to drop a table");
+		}
+		System.out.println("drop table successfully in record manager");
+	}
 }

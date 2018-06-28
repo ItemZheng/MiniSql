@@ -75,7 +75,7 @@ public class Interpreter {
 							int res= API.API_Module(argv);
 							if (res==0) break;
 							else if (res==1) {
-								System.out.println("Execute successfully!");
+								
 								continue;
 							}
 							else 
@@ -698,7 +698,14 @@ public class Interpreter {
 		}
 		for(i = 0; i < primary_Key.size(); i++)
 		{
-			argv.add(primary_Key.get(i));
+			int pri_id = -1, j;
+			for(j = 0; j < col.size(); j = j + 3) {
+				if(col.get(j/3).equals(primary_Key.get(i))) {
+					pri_id = j / 3;
+					break;
+				}
+			}
+			argv.add("" + pri_id);
 		}
 		return argv;
 	}
