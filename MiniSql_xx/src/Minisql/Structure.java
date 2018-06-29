@@ -15,6 +15,7 @@ public class Structure {
 			isPrimarykey= false;
 			isUnique= false;
 			type=-1;
+			offset=0;
 		}
 		}	
 	public static class Index{
@@ -27,10 +28,10 @@ public class Structure {
 	public static class Table{
 		public String table_name;
 		public ArrayList<Attribute> attributes;
-		public ArrayList<String> indexes; 
+		public ArrayList<String> indexes; //name of indexes
 		public int oneRecord_length;//total length of one record, should be equal to sum(attributes[i].length)
 		
-		public ArrayList<String> primaryKeys;
+		public ArrayList<String> primaryKeys; //name of primary keys
 	//	public int  blockNum;//the number of blocks tablename.record occupy. It will change when insert and delete.
 	//	public int maxRecordNumPerBlock;
 		public int RecordNum;
@@ -42,16 +43,17 @@ public class Structure {
 			table_name= null;
 	//		blockNum =0;
 			attrNum= 0;
-		//	maxRecordNumPerBlock=0;
+	//		maxRecordNumPerBlock=0;
 			oneRecord_length=0;
 			RecordNum=0;
 		}
 	}
 	
 	public static class Record{
-		public Vector<byte[]> columns;
+		public int Length;
+		public ArrayList<byte[]> columns;
 		public Record() {
-			columns = new Vector<byte[]>();
+			columns = new ArrayList<byte[]>();
 		}
 	}
 	

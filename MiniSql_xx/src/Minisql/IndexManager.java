@@ -21,7 +21,8 @@ public class IndexManager {
 	public static void Drop_Index(String IndexName) {
 		try {
 			String filename= IndexName+".index";
-			//drop a B+ tree
+			BufferManage.dropFile(filename);
+			
 		}catch (Exception e) {
 			System.err.println(e.getMessage());
 			System.err.println("Failure in index manager to drop a index");

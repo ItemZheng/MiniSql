@@ -5,19 +5,7 @@ import Minisql.Structure.*;
 
 public class CatalogManager {
 	protected static LinkedList<Index> indexList= new LinkedList<Index>();
-	protected static LinkedList<Table> tableList= new LinkedList<Table>();
-	public static  Boolean isExistTable(String tableName)
-	{
-		return false;
-	}
-	
-	public static  Boolean isExistIndex(String indexName)
-	{
-		return false;
-	}
-	
-	
-	
+	protected static LinkedList<Table> tableList= new LinkedList<Table>();	
 	public static void UpdateIndexCatalog() {
 		
 	}
@@ -37,20 +25,12 @@ public class CatalogManager {
 	public static void Create_Table(Table tb)
 	{
 		tableList.add(tb);
-	
-		/*write the following information to a file:
-		tb.table_name
-		*/
 	}
 	
 	public static void Create_Index(Index inx)
 	{
 		indexList.add(inx);
 
-		/*write the following information to a file:
-		inx.index_name
-		inx.table_name
-		inx.attribute_name*/
 	}
 	
 	public static Table getTable(String tableName) {
@@ -74,6 +54,10 @@ public class CatalogManager {
 	}
 	
 	public static void dropIndex(String indexName) {
+		//FILE 
+		//table.INDEXeS
+		//index LIST
+		
 		Index inx = getIndex(indexName);//Already judge in API, it will not be NULL
 		indexList.remove(inx);
 		Table tb1= getTable(inx.table_name);
@@ -81,6 +65,7 @@ public class CatalogManager {
 		else {
 			tb1.indexes.remove(indexName);
 		}
+		
 	}
 	
 	public static void dropTable(String tableName) {
@@ -88,7 +73,8 @@ public class CatalogManager {
 		// must delete the index from index list before delete the table from table list !!!
 		for(int i=0;i<tb1.indexes.size();i++)
 		{
-			dropIndex(tb1.indexes.get(i));
+			dropIndex(tb1.indexes.get(i));//list /table.indexes
+			IndexManager.Drop_Index(tb1.indexes.get(i)); //file
 		}
 		
 		tableList.remove(tb1);

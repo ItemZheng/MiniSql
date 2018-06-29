@@ -568,7 +568,7 @@ public class Interpreter {
 					}
 					else
 					{
-						type = type + "0";  //"char 0"
+						type = type + "1";  //"char 1"
 					}
 				}
 				//type is OK, add it to col

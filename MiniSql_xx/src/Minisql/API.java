@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Vector;
 
 import Minisql.Structure.*;
+
 /*test case :
  * create table book(bno int, bname char(8) unique, price int, primary key(bno));
  * create index stunameidx on student ( sname );
@@ -22,7 +23,7 @@ public class API {
 		else if( SQLargv.get(0).equals("0"))//create table
 		{
 			String tbName=SQLargv.get(1).toString();
-			if(CatalogManager.isExistTable(tbName)==true) {
+			if(CatalogManager.getTable(tbName)!=null) {
 				System.out.print("table already exists");
 				return 1;
 				}
@@ -59,6 +60,9 @@ public class API {
 				argv1=SQLargv.get(3*i+5).toString();
 				if (argv1.equals("1")) tb1.attributes.get(i).isUnique=true;
 				else   tb1.attributes.get(i).isUnique=false;		
+				
+				if(i>0) tb1.attributes.get(i).offset= tb1.attributes.get(i-1).offset+tb1.attributes.get(i-1).length;
+				else if (i==0) tb1.attributes.get(0).offset =0;
 			}
 			int hasPrikey =0;
 			if (SQLargv.size() > 3*colNum+3) hasPrikey=1;
@@ -82,8 +86,8 @@ public class API {
 			}
 		
 		
-			CatalogManager.Create_Table(tb1);
-			RecordManager.Create_Table(tb1);
+			CatalogManager.Create_Table(tb1); //done
+			RecordManager.Create_Table(tb1); //done
 		
 			//make the first primary key be an  index.
 			if (hasPrikey==1)
@@ -93,7 +97,7 @@ public class API {
 				Index inx1= new Index();
 				inx1.index_name=tb1.attributes.get(prikey_index).name+"-PrimaryKey";
 				inx1.table_name=tb1.table_name;
-				inx1.attribute_name=inx1.index_name;
+				inx1.attribute_name=tb1.attributes.get(prikey_index).name;
 				inx1.attr_length=tb1.attributes.get(prikey_index).length;
 				inx1.attr_index=prikey_index;
 				
@@ -102,8 +106,6 @@ public class API {
 				IndexManager.Create_Index(tb1, inx1);
 
 			}
-			
-			
 			System.out.println("done");
 			return 1;
 			
@@ -136,11 +138,15 @@ public class API {
 					System.out.println("Cannot create index because of not existing the attribute!");
 					return 1;
 				}
+				if(CatalogManager.getIndex(inx1.index_name)==null) { //if not exist
+					tb1.indexes.add(inx1.index_name);
+					IndexManager.Create_Index(tb1, inx1);
+					CatalogManager.Create_Index(inx1);
+					System.out.println("done");
+					return 1;
+					
+				}
 			}
-			IndexManager.Create_Index(tb1, inx1);
-			CatalogManager.Create_Index(inx1);
-			System.out.println("done");
-			return 1;
 		}
 		else if(SQLargv.get(0).equals("2"))//drop index
 		{
@@ -151,9 +157,10 @@ public class API {
 				System.out.println("Cannot drop index because of not existing the index!");
 				return 1;
 			}else {
+				
 				IndexManager.Drop_Index(inxName);
 				CatalogManager.dropIndex(inxName);
-				//BufferManager.dropIndex()?????
+				
 			}
 			System.out.println("done");
 			return 1;	
@@ -169,7 +176,7 @@ public class API {
 			}else {	
 				CatalogManager.dropTable(tbName);//at the same time delete  indexes.
 				RecordManager.Drop_Table(tbName);
-				//BufferManager.dropTable()????
+				
 			}
 			System.out.println("done");
 			return 1;	
@@ -204,12 +211,25 @@ public class API {
 								System.out.println("Cannot insert values because of wrong type!");
 								return 1;
 							}
+							//check the length
+							if(SQLargv.get(i*2+4).toString().length() > tb1.attributes.get(i).length)
+							{
+								System.out.println("Cannot insert values because of wrong length!");
+								return 1;
+							}
 						}
 						else {// the value is not a string 
 							if(tb1.attributes.get(i).type >=1 && tb1.attributes.get(i).type <=255 )// char(*)
 							{
 								System.out.println("Cannot insert values because of wrong type!");
 								return 1;
+							}
+							if(tb1.attributes.get(i).type ==0)//integer
+							{
+								if(SQLargv.get(i*2+4).toString().contains(".")) {
+									System.out.println("Cannot insert values because of wrong type!");
+									return 1;
+								}
 							}
 						}
 						// when the type is correct.
@@ -238,39 +258,43 @@ public class API {
 						if(tb1.attributes.get(i).isPrimarykey)
 						{
 							Condition cd = new Condition();
-							cd.op =Comparison.Ne;//just one of the new primary keys' value is not exist will be okay.
+							cd.op =Comparison.Eq;//just one of the new primary keys' value is not exist will be okay.
 							cd.value=SQLargv.get(i*2+3).toString();
 							cd.AttrIndex =i;
 							
 							primary_conditions.add(cd);
 						}
 					}
-					if(RecordManager.exist(tb1, primary_conditions)== false) { // all new primary values is equal to the old primary key values
+					if(RecordManager.exist(tb1, primary_conditions)== true) { // all new primary values is equal to the old primary key values
 						System.out.println("Cannot insert values because of breaking the primary principle!");
 						return 1;
 					}
-					/*
+					
 					//now all is correct
 					Record rec1= new Record();
+					rec1.Length=tb1.oneRecord_length;
 					for (int i= 0;i<tb1.attrNum;i++)
 					{	
+						String tempValue= SQLargv.get(i*2+3).toString();
 						byte[] tempBytes;
 						if(tb1.attributes.get(i).type==0) //integer
 						{
-							tempBytes=;
+							int value = Integer.parseInt(tempValue);
+							tempBytes = BufferManage.Int2byte(value);
 						}else if(tb1.attributes.get(i).type==256) //float
 						{
-							tempBytes=;
+							float value = Float.parseFloat(tempValue);
+							tempBytes = BufferManage.Float2Byte(value);
 						}
 						else { //char(x)
-							tempBytes=;
+							tempBytes = BufferManage.String2byte(tempValue, tb1.attributes.get(i).length);
 						}
 						rec1.columns.add(tempBytes);
 					}
 					RecordManager.Insert_Value(tb1,rec1);
 					System.out.println("done");
 					return 1;	
-					*/
+					
 				}
 				
 			}
@@ -284,7 +308,7 @@ public class API {
 			{
 				RecordManager.Delete_Table(tb1);
 			}else { //have conditions
-				
+				Vector< Condition> conditions=new Vector< Condition>();
 				
 			}
 		}
