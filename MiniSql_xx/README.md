@@ -47,6 +47,10 @@
 
 		[Done]
 		select * from 表名 ;
+		arguments: [4, table_name,0,0]
+		e.g.  select * from abc
+			[4, abc, 0, 0]
+	
 		或：
 		select * from 表名 where 条件 ;
 		arguments: [4, table_name, col_num, col1, col2, col3.....
@@ -60,10 +64,16 @@
 		arguments: [5, table_name, values_num,
 					value1, isString, .....]	
 		e.g	insert inTO student vALues ('12345678','wy',22,'M');
+
+		[5, student, 4, 12345678, 1, wy, 1, 22, 0, M, 1]
 		
 		
 		[Done]
 		delete from 表名 ;
+		arguments: [6, table_name, 0]
+		e.g.  delete from sasda;
+		     [6, sasda, 0]
+		
 		或：
 		delete from 表名 where 条件 ;
 		arguments: [6, table_name, condition_num, left1, op1, right1, right_isString1....]
