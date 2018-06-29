@@ -183,6 +183,105 @@ public class API {
 		}
 		else if(SQLargv.get(0).equals("4")) //select
 		{
+			String tbName =SQLargv.get(1).toString();
+			Table tb1= CatalogManager.getTable(tbName);
+			if(tb1 ==null)
+			{
+				System.out.println("Cannot selecet from table because of not existing the table!");
+				return 1;
+			}
+			int col_num = Integer.parseInt(SQLargv.get(2).toString());
+			int condition_num = Integer.parseInt(SQLargv.get(3+col_num).toString());
+			Vector< Condition> conditions=new Vector< Condition>();
+			
+			if(col_num==0 && condition_num ==0) //select* from table 
+			{
+				
+			}
+			else if (col_num==0&& condition_num >0){// select * from table where 
+				for(int i=0; i< condition_num;i++)
+				{   Condition  cd =new Condition();
+					String attrName= SQLargv.get(4+col_num+ 4*i).toString();
+	                String tempValue = SQLargv.get(6+col_num+ 4*i).toString();
+					int isString = Integer.parseInt(SQLargv.get(7+col_num+ 4*i).toString());;
+	                int typeflag =0;
+					int j=0;
+					for(j=0;j<tb1.attrNum;j++)
+					{
+						if(tb1.attributes.get(j).name == attrName)
+						{
+						
+							if(isString==1)
+							{
+								if(tb1.attributes.get(j).type==0||tb1.attributes.get(j).type==256)
+								{
+									typeflag=1;
+									break;
+								}
+							}
+							else// integer or float
+							{
+								if(tb1.attributes.get(j).type>=1 && tb1.attributes.get(j).type<= 255)
+								{
+									typeflag=1;
+									break;
+								}
+								else if(tb1.attributes.get(j).type==0)//integer
+								{
+									if(tempValue.contains(".")) {
+										typeflag=1;
+										break;
+									}
+								}
+							}
+							break;
+						}
+					}
+					
+					if(typeflag==1)
+					{	
+						System.out.println("Cannot selecet from table because of wrong type!");
+					return 1;
+						
+					}
+					if(j>=tb1.attrNum)
+					{
+						System.out.println("Cannot selecet from table because of not existing the attribute!");
+						return 1;
+					}
+					
+					String CdOp =SQLargv.get(5+col_num+ 4*i).toString();
+					switch (CdOp) {
+					case "<=":
+						cd.op= Comparison.Le;
+						break;
+					case "<":
+						cd.op= Comparison.Lt;
+						break;
+					case ">=":
+						cd.op= Comparison.Ge;
+						break;
+					case ">":
+						cd.op= Comparison.Gt;
+						break;
+					case "!=":
+						cd.op= Comparison.Ne;
+						break;
+					case "==":
+						cd.op= Comparison.Eq;
+						break;
+					}
+					conditions.add(cd);
+				}
+				
+				//already save all conditions to the vector  conditions.
+				// more work about  indexManager and RecordManager and CatalogManager need to be done.
+				
+			}
+			else { //select col1,col2,... from  table where...
+	
+
+			}
 			
 		}
 		else if(SQLargv.get(0).equals("5"))//insert
