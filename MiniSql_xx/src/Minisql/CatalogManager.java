@@ -16,10 +16,27 @@ public class CatalogManager {
 		return false;
 	}
 	
+	
+	
+	public static void UpdateIndexCatalog() {
+		
+	}
+	
+	public static void UpdateTableCatalog() {
+		
+	}
+	
+	public static void ReadIndexCatalog() {
+		
+	}
+	public static void ReadTableCatalog() {
+		
+	}
+	
+	
 	public static void Create_Table(Table tb)
 	{
 		tableList.add(tb);
-		//???? no need to use a list???
 	
 		/*write the following information to a file:
 		tb.table_name
@@ -29,8 +46,6 @@ public class CatalogManager {
 	public static void Create_Index(Index inx)
 	{
 		indexList.add(inx);
-		
-		//???? no need to use a list???
 
 		/*write the following information to a file:
 		inx.index_name
@@ -80,9 +95,5 @@ public class CatalogManager {
 		
 		
 	}
-	
-	/*
-	public Table tableRead(String tableName);
-	public void tableWrite(String tableName);
-	*/	
+
 }

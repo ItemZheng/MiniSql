@@ -31,20 +31,43 @@ public class Structure {
 		public int oneRecord_length;//total length of one record, should be equal to sum(attributes[i].length)
 		
 		public ArrayList<String> primaryKeys;
-		public int  blockNum;//the number of blocks tablename.record occupy
-		public int maxRecordNumPerBlock;
+	//	public int  blockNum;//the number of blocks tablename.record occupy. It will change when insert and delete.
+	//	public int maxRecordNumPerBlock;
+		public int RecordNum;
 		public int attrNum;
 		public Table() {
 			attributes=null;
 			indexes= null;
 			primaryKeys=null;
 			table_name= null;
-			blockNum =0;
+	//		blockNum =0;
 			attrNum= 0;
-			maxRecordNumPerBlock=0;
+		//	maxRecordNumPerBlock=0;
 			oneRecord_length=0;
+			RecordNum=0;
 		}
+	}
+	
+	public static class Record{
+		public Vector<byte[]> columns;
+		public Record() {
+			columns = new Vector<byte[]>();
+		}
+	}
+	
+	public enum Comparison{
+		Eq, //equal 
+		Ne, //not equal 
+		Ge, //great than or equal
+		Gt, //great than
+		Le, //less than or equal
+		Lt //less than
 		
+	}
+	public static class Condition{
+		public  int  AttrIndex;
+		public  Comparison op;
+		public String value;
 	}
 }
 

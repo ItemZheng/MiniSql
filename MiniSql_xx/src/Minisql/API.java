@@ -2,6 +2,8 @@ package Minisql;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
+
 import Minisql.Structure.*;
 /*test case :
  * create table book(bno int, bname char(8) unique, price int, primary key(bno));
@@ -19,11 +21,11 @@ public class API {
 		}
 		else if( SQLargv.get(0).equals("0"))//create table
 		{
-			String tbName="";
-			tbName=SQLargv.get(1).toString();
+			String tbName=SQLargv.get(1).toString();
 			if(CatalogManager.isExistTable(tbName)==true) {
 				System.out.print("table already exists");
-				return 1;}
+				return 1;
+				}
 			
 			Table tb1= new Table();
 			tb1.table_name=tbName;
@@ -71,18 +73,18 @@ public class API {
 				}
 			}
 
-			tb1.blockNum=1;
+
 			tb1.oneRecord_length=0;
+			tb1.RecordNum=0;
 			for(int k =0; k< colNum;k++)
 			{
 				tb1.oneRecord_length+= tb1.attributes.get(k).length;
 			}
-			tb1.maxRecordNumPerBlock= 4096/tb1.oneRecord_length;
+		
 		
 			CatalogManager.Create_Table(tb1);
 			RecordManager.Create_Table(tb1);
-			//CatalogManager.UpdateTable()
-			
+		
 			//make the first primary key be an  index.
 			if (hasPrikey==1)
 			{
@@ -98,7 +100,7 @@ public class API {
 				tb1.indexes.add(inx1.index_name);
 				CatalogManager.Create_Index(inx1);
 				IndexManager.Create_Index(tb1, inx1);
-				//CatalogManager.UpdateIndex()
+
 			}
 			
 			
@@ -112,8 +114,7 @@ public class API {
 			inx1.index_name=SQLargv.get(1).toString();
 			inx1.table_name=SQLargv.get(2).toString();
 			inx1.attribute_name=SQLargv.get(3).toString();
-			Table tb1;
-			tb1= CatalogManager.getTable(inx1.table_name);
+			Table tb1=CatalogManager.getTable(inx1.table_name);
 			if(tb1==null)
 			{
 				System.out.println("Cannot create index because of not existing the table!");
@@ -179,11 +180,113 @@ public class API {
 		}
 		else if(SQLargv.get(0).equals("5"))//insert
 		{
-			
+			String tbName= SQLargv.get(1).toString();
+			Table tb1= CatalogManager.getTable(tbName);
+			if(tb1 == null)
+			{
+				System.out.println("Cannot insert values because of not existing the table!");
+				return 1;
+			}
+			else {
+				int valuesNum= Integer.parseInt(SQLargv.get(2).toString());
+				if(valuesNum!= tb1.attrNum)
+				{
+					System.out.println("Cannot insert values because of wrong value number!");
+					return 1;
+				}
+				else {
+					for (int i= 0;i<tb1.attrNum;i++)
+					{
+						if(SQLargv.get(i*2+4).toString().equals("1"))// the value is a string 
+						{
+							if(tb1.attributes.get(i).type ==0 || tb1.attributes.get(i).type ==256 )// integer or float
+							{
+								System.out.println("Cannot insert values because of wrong type!");
+								return 1;
+							}
+						}
+						else {// the value is not a string 
+							if(tb1.attributes.get(i).type >=1 && tb1.attributes.get(i).type <=255 )// char(*)
+							{
+								System.out.println("Cannot insert values because of wrong type!");
+								return 1;
+							}
+						}
+						// when the type is correct.
+						
+						// judge whether the unique value is unique..
+						if(tb1.attributes.get(i).isUnique)
+						{
+							Vector< Condition> unique_conditions=new Vector< Condition>();
+							Condition cd = new Condition();
+							cd.op =Comparison.Eq; //judge whether exist old value is equal to the new value.
+							cd.value=SQLargv.get(i*2+3).toString();
+							cd.AttrIndex =i;
+							
+							unique_conditions.add(cd);
+							if(RecordManager.exist(tb1, unique_conditions)) {
+								System.out.println("Cannot insert values because of breaking the unique principle!");
+								return 1;
+							}
+						}
+					}
+					
+					//judge whether the primary key is unique. 
+					Vector< Condition> primary_conditions=new Vector< Condition>();
+					for (int i= 0;i<tb1.attrNum;i++)
+					{
+						if(tb1.attributes.get(i).isPrimarykey)
+						{
+							Condition cd = new Condition();
+							cd.op =Comparison.Ne;//just one of the new primary keys' value is not exist will be okay.
+							cd.value=SQLargv.get(i*2+3).toString();
+							cd.AttrIndex =i;
+							
+							primary_conditions.add(cd);
+						}
+					}
+					if(RecordManager.exist(tb1, primary_conditions)== false) { // all new primary values is equal to the old primary key values
+						System.out.println("Cannot insert values because of breaking the primary principle!");
+						return 1;
+					}
+					/*
+					//now all is correct
+					Record rec1= new Record();
+					for (int i= 0;i<tb1.attrNum;i++)
+					{	
+						byte[] tempBytes;
+						if(tb1.attributes.get(i).type==0) //integer
+						{
+							tempBytes=;
+						}else if(tb1.attributes.get(i).type==256) //float
+						{
+							tempBytes=;
+						}
+						else { //char(x)
+							tempBytes=;
+						}
+						rec1.columns.add(tempBytes);
+					}
+					RecordManager.Insert_Value(tb1,rec1);
+					System.out.println("done");
+					return 1;	
+					*/
+				}
+				
+			}
 		}
-		else if(SQLargv.get(0).equals("6"))//delete
+		else if(SQLargv.get(0).equals("6"))//delete 
 		{
+			String tbName= SQLargv.get(1).toString();
+			Table tb1=CatalogManager.getTable(tbName);
 			
+			if(SQLargv.get(2).equals("0")) //delete all :clear all records and indexes
+			{
+				RecordManager.Delete_Table(tb1);
+			}else { //have conditions
+				
+				
+			}
 		}
 		return 1;
 	}
