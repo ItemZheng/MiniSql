@@ -172,6 +172,10 @@ class BufferManage {
 			pos = offset;
 		}
 		
+		public int getOffset() {
+			return pos;
+		}
+		
 		public void close() {
 			//release this class
 			try {
@@ -273,7 +277,7 @@ class BufferManage {
 			int i, mintimes = Global.INF, minID = -1;
 			for(i = 0; i < Global.BlockNum; i++) {
 				//judge the block if is in block
-				if((blocks[i].filename == name) && (blocks[i].offset == offset)) {
+				if(name.equals((blocks[i].filename)) && (blocks[i].offset == offset)) {
 					if(blocks[i].isLock) {
 						throw new Exception("BUFFER_ERROR: Can not open a file twice!");
 					}
@@ -335,7 +339,7 @@ class BufferManage {
 		try {
 			int i;
 			for(i = 0; i < Global.BlockNum; i++) {
-				if(blocks[i].filename.equals(filename)) {
+				if(filename.equals(blocks[i].filename)) {
 					if(blocks[i].isLock) {
 						throw new Exception("BUFFER_ERROR: delete a block when it is locked!");
 					}

@@ -1,16 +1,14 @@
 package Minisql;
 
 import java.util.*;
-
 public class Structure {
 	public static  class Attribute {
-		public int length;
 		public String name;
 		public int type;//0->integer ,256->float ,1~255->char()
+		public int length;
 		public Boolean isPrimarykey;
 		public Boolean isUnique;
 		public int offset;
-		
 		public Attribute() {
 			isPrimarykey= false;
 			isUnique= false;
@@ -24,26 +22,23 @@ public class Structure {
 		public String attribute_name;
 		public int attr_index;// the index of its attribute
 		public int attr_length;
+		public int attr_type;
 	}
 	public static class Table{
 		public String table_name;
-		public ArrayList<Attribute> attributes;
-		public ArrayList<String> indexes; //name of indexes
-		public int oneRecord_length;//total length of one record, should be equal to sum(attributes[i].length)
-		
-		public ArrayList<String> primaryKeys; //name of primary keys
-	//	public int  blockNum;//the number of blocks tablename.record occupy. It will change when insert and delete.
-	//	public int maxRecordNumPerBlock;
 		public int RecordNum;
 		public int attrNum;
+		public int oneRecord_length;//total length of one record, should be equal to sum(attributes[i].length)
+		public ArrayList<Attribute> attributes;
+		public ArrayList<String> indexes; //name of indexes		
+		public ArrayList<String> primaryKeys; //name of primary keys
+		
 		public Table() {
-			attributes=null;
-			indexes= null;
-			primaryKeys=null;
-			table_name= null;
-	//		blockNum =0;
+			attributes=new ArrayList<Attribute>();
+			indexes= new ArrayList<String>();
+			primaryKeys= new ArrayList<String>();
+			table_name= "";
 			attrNum= 0;
-	//		maxRecordNumPerBlock=0;
 			oneRecord_length=0;
 			RecordNum=0;
 		}
@@ -54,6 +49,44 @@ public class Structure {
 		public ArrayList<byte[]> columns;
 		public Record() {
 			columns = new ArrayList<byte[]>();
+		}
+		/*Record selectedRecord(Table tb, selectedAttribute selections)
+		{
+			Record returnRecord =new Record();
+			for(int i=0; i<tb.attrNum;i++) {
+				for(int j=0;j<selections.AttrIndexes.size();j++) {
+					if(i== selections.AttrIndexes.get(j)){
+						returnRecord.columns.add(this.columns.get(i));
+						break;
+					}
+				}
+			}
+			return returnRecord;
+		}
+		*/
+		
+	}
+	
+	public static class OneRow
+	{
+		public Vector<String> colunms;
+		public OneRow() {
+			
+			colunms =new Vector<String>();
+		}
+		
+	}
+	public static class Data{
+		public Vector <OneRow> rows;
+		public Data() {
+			rows= new Vector<OneRow>();
+		}
+	}
+	
+	public static class selectedAttribute{
+		Vector<Integer> AttrIndexes;
+		public selectedAttribute() {
+			AttrIndexes= new Vector<Integer>();
 		}
 	}
 	

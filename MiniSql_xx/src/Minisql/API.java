@@ -3,6 +3,7 @@ package Minisql;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
+import java.util.PrimitiveIterator.OfDouble;
 
 import Minisql.Structure.*;
 
@@ -95,12 +96,12 @@ public class API {
 				tb1.indexes= new ArrayList<String>();
 				int prikey_index = Integer.parseInt(SQLargv.get(3*colNum+3).toString());
 				Index inx1= new Index();
-				inx1.index_name=tb1.attributes.get(prikey_index).name+"-PrimaryKey";
+				inx1.index_name=tb1.attributes.get(prikey_index).name+"_PrimaryKey";
 				inx1.table_name=tb1.table_name;
 				inx1.attribute_name=tb1.attributes.get(prikey_index).name;
 				inx1.attr_length=tb1.attributes.get(prikey_index).length;
 				inx1.attr_index=prikey_index;
-				
+				inx1.attr_type= tb1.attributes.get(prikey_index).type;
 				tb1.indexes.add(inx1.index_name);
 				CatalogManager.Create_Index(inx1);
 				IndexManager.Create_Index(tb1, inx1);
@@ -130,6 +131,7 @@ public class API {
 					{
 						inx1.attr_index=i;
 						inx1.attr_length=tb1.attributes.get(i).length;
+						inx1.attr_type=tb1.attributes.get(i).type;
 						break;
 					}
 				}
@@ -146,6 +148,10 @@ public class API {
 					return 1;
 					
 				}
+				else {
+					System.out.println("Cannot create index because of  existing the index!");
+					return 1;
+				}
 			}
 		}
 		else if(SQLargv.get(0).equals("2"))//drop index
@@ -158,8 +164,8 @@ public class API {
 				return 1;
 			}else {
 				
-				IndexManager.Drop_Index(inxName);
-				CatalogManager.dropIndex(inxName);
+				IndexManager.Drop_Index(inxName);//remove index file
+				CatalogManager.dropIndex(inxName);//remove from index list and from table.indexes
 				
 			}
 			System.out.println("done");
@@ -174,8 +180,14 @@ public class API {
 				System.out.println("Cannot drop table because of not existing the table!");
 				return 1;
 			}else {	
-				CatalogManager.dropTable(tbName);//at the same time delete  indexes.
-				RecordManager.Drop_Table(tbName);
+				// must drop the index from index list before drop the table from table list.
+				while(tb1.indexes.size()!=0) {
+				
+					IndexManager.Drop_Index(tb1.indexes.get(0)); //remove index file
+					CatalogManager.dropIndex(tb1.indexes.get(0));//remove from index list and from table.indexes ,so tb1.indexes.size()--;
+				}
+				CatalogManager.dropTable(tbName); //remove from table list
+				RecordManager.Drop_Table(tbName); // remove from the table file.
 				
 			}
 			System.out.println("done");
@@ -197,8 +209,10 @@ public class API {
 			if(col_num==0 && condition_num ==0) //select* from table 
 			{
 				
+				RecordManager.Select(tb1);
 			}
-			else if (col_num==0&& condition_num >0){// select * from table where 
+			else if (col_num>=0&& condition_num >0){// select from table where  
+				
 				for(int i=0; i< condition_num;i++)
 				{   Condition  cd =new Condition();
 					String attrName= SQLargv.get(4+col_num+ 4*i).toString();
@@ -208,9 +222,9 @@ public class API {
 					int j=0;
 					for(j=0;j<tb1.attrNum;j++)
 					{
-						if(tb1.attributes.get(j).name == attrName)
+						if(tb1.attributes.get(j).name.equals(attrName) )
 						{
-						
+							
 							if(isString==1)
 							{
 								if(tb1.attributes.get(j).type==0||tb1.attributes.get(j).type==256)
@@ -221,7 +235,7 @@ public class API {
 							}
 							else// integer or float
 							{
-								if(tb1.attributes.get(j).type>=1 && tb1.attributes.get(j).type<= 255)
+								if((tb1.attributes.get(j).type>=1) && (tb1.attributes.get(j).type<= 255))
 								{
 									typeflag=1;
 									break;
@@ -234,6 +248,8 @@ public class API {
 									}
 								}
 							}
+							cd.AttrIndex=j;
+							cd.value= tempValue;
 							break;
 						}
 					}
@@ -246,6 +262,7 @@ public class API {
 					}
 					if(j>=tb1.attrNum)
 					{
+						System.out.println(j+"  "+tb1.attrNum);
 						System.out.println("Cannot selecet from table because of not existing the attribute!");
 						return 1;
 					}
@@ -267,21 +284,72 @@ public class API {
 					case "!=":
 						cd.op= Comparison.Ne;
 						break;
-					case "==":
+					case "=":
 						cd.op= Comparison.Eq;
 						break;
 					}
 					conditions.add(cd);
 				}
 				
-				//already save all conditions to the vector  conditions.
-				// more work about  indexManager and RecordManager and CatalogManager need to be done.
+				if(col_num==0)// select * from  table where
+				{
+					RecordManager.Select(tb1,conditions);
+				}
+				else if(col_num>0) //select col1,col2,... from  table where...
+				{
+					/* Attributes selections */
+					selectedAttribute selections =new selectedAttribute();
+					for(int i=0; i<col_num;i++)
+					{
+						String col_name= SQLargv.get(3+i).toString();
+						int j;
+						for(j=0;j<tb1.attrNum;j++)
+						{
+							if(tb1.attributes.get(j).name.equals(col_name))
+							{
+								selections.AttrIndexes.add(j);
+								break;
+							}
+						}
+						if(j>=tb1.attrNum) {
+							System.out.println("Cannot selecet from table because of not existing the attribute "+ col_name);
+							return 1;
+						}
+						
+					}
+					
+					RecordManager.Select(tb1,conditions,selections);
+					
+				}
+			}
+			else if (col_num>0&& condition_num==0){ //select col1,col2 ...from table..
+				
+				selectedAttribute selections =new selectedAttribute();
+				for(int i=0; i<col_num;i++)
+				{
+					String col_name= SQLargv.get(3+i).toString();
+					int j;
+					for(j=0;j<tb1.attrNum;j++)
+					{
+						if(tb1.attributes.get(j).name.equals(col_name))
+						{
+							selections.AttrIndexes.add(j);
+							break;
+						}
+					}
+					if(j>=tb1.attrNum) {
+						System.out.println("Cannot selecet from table because of not existing the attribute "+ col_name);
+						return 1;
+					}
+					
+				}
+				
+				RecordManager.Select(tb1,selections);
 				
 			}
-			else { //select col1,col2,... from  table where...
-	
 
-			}
+			System.out.println("done");
+			return 1;	
 			
 		}
 		else if(SQLargv.get(0).equals("5"))//insert
@@ -318,7 +386,7 @@ public class API {
 							}
 						}
 						else {// the value is not a string 
-							if(tb1.attributes.get(i).type >=1 && tb1.attributes.get(i).type <=255 )// char(*)
+							if((tb1.attributes.get(i).type >=1) && (tb1.attributes.get(i).type <=255) )// char(*)
 							{
 								System.out.println("Cannot insert values because of wrong type!");
 								return 1;
@@ -390,7 +458,18 @@ public class API {
 						}
 						rec1.columns.add(tempBytes);
 					}
-					RecordManager.Insert_Value(tb1,rec1);
+					RecordManager.Insert_Value(tb1,rec1); //add the record to the table.record
+					tb1.RecordNum++ ;// just make tb1.RecordNum++  in catalog manager
+					
+					//insert the index key to the B+ tree.
+					for(int j=0;j<tb1.indexes.size();j++)
+					{
+						Index tempinx = CatalogManager.getIndex(tb1.indexes.get(j));
+						IndexManager.InsertKey(tempinx,rec1.columns.get(tempinx.attr_index));
+					}
+						
+					System.out.println("insert success for all indexes!");
+					
 					System.out.println("done");
 					return 1;	
 					
@@ -402,12 +481,106 @@ public class API {
 		{
 			String tbName= SQLargv.get(1).toString();
 			Table tb1=CatalogManager.getTable(tbName);
-			
-			if(SQLargv.get(2).equals("0")) //delete all :clear all records and indexes
+			if(tb1==null)
 			{
+				System.out.println("Cannot delete because of not existing the table!");
+				return 1;
+			}
+			
+			if(SQLargv.get(2).equals("0")) //delete from table :clear all records of the table and clear the .index
+			{
+				
 				RecordManager.Delete_Table(tb1);
-			}else { //have conditions
+				System.out.println("RecordManager.Delete_Table(tb1); -done");
+				for(int i =0; i<tb1.indexes.size();i++)
+				{
+					Index inx=CatalogManager.getIndex(tb1.indexes.get(i));
+					IndexManager.Delete_Index(tb1, inx); //clear index_name.index file
+				}
+				tb1.RecordNum=0; //table's record number =0;	
+				
+			}else { // delete from table with some conditions
 				Vector< Condition> conditions=new Vector< Condition>();
+				int condition_num= Integer.parseInt(SQLargv.get(2).toString());
+				for(int i=0; i< condition_num;i++)
+				{   
+					Condition  cd =new Condition();
+					String attrName= SQLargv.get(3+ 4*i).toString();
+	                String tempValue = SQLargv.get(5+ 4*i).toString();
+					int isString = Integer.parseInt(SQLargv.get(6+ 4*i).toString());;
+	                int typeflag =0;
+					int j=0;
+					for(j=0;j<tb1.attrNum;j++)
+					{
+						if(tb1.attributes.get(j).name.equals(attrName))
+						{
+						
+							if(isString==1) //char(x)
+							{
+								if(tb1.attributes.get(j).type==0||tb1.attributes.get(j).type==256)
+								{
+									typeflag=1;
+									break;
+								}
+							}
+							else// integer or float
+							{
+								if((tb1.attributes.get(j).type>=1) && (tb1.attributes.get(j).type<= 255))
+								{
+									typeflag=1;
+									break;
+								}
+								else if(tb1.attributes.get(j).type==0)//integer
+								{
+									if(tempValue.contains(".")) {
+										typeflag=1;
+										break;
+									}
+								}
+							}
+							cd.AttrIndex=j;
+							cd.value= tempValue;
+							
+							break;
+						}
+					}
+					
+					if(typeflag==1)
+					{	
+						System.out.println("Cannot selecet from table because of wrong type!");
+					return 1;
+						
+					}
+					if(j>=tb1.attrNum)
+					{
+						System.out.println("Cannot selecet from table because of not existing the attribute!");
+						return 1;
+					}
+					
+					String CdOp =SQLargv.get(4+ 4*i).toString();
+					switch (CdOp) {
+					case "<=":
+						cd.op= Comparison.Le;
+						break;
+					case "<":
+						cd.op= Comparison.Lt;
+						break;
+					case ">=":
+						cd.op= Comparison.Ge;
+						break;
+					case ">":
+						cd.op= Comparison.Gt;
+						break;
+					case "!=":
+						cd.op= Comparison.Ne;
+						break;
+					case "=":
+						cd.op= Comparison.Eq;
+						break;
+					}
+					conditions.add(cd);
+				}
+				RecordManager.Delete(tb1,conditions);
 				
 			}
 		}

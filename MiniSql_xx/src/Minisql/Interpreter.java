@@ -102,7 +102,6 @@ public class Interpreter {
 					}
 			}
 		}
-		
 		System.out.println("Bye~");
 	}
 	
@@ -173,7 +172,7 @@ public class Interpreter {
 		
 		//get first argv
 		i = 0;
-		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';') i++;
+		while(command.charAt(i) != ' ' && command.charAt(i) != '\t' && command.charAt(i) != '\n' && command.charAt(i) != ';' && command.charAt(i) != '*') i++;
 		String op = command.substring(0, i).toLowerCase();
 		
 		op = op.toLowerCase();
@@ -593,6 +592,8 @@ public class Interpreter {
 				else if(command.charAt(0) == ')')
 				{
 					//create end
+					isUnique = "0";
+					col.add(isUnique);
 					command = command.substring(1);
 					break;
 				}
@@ -700,7 +701,7 @@ public class Interpreter {
 		{
 			int pri_id = -1, j;
 			for(j = 0; j < col.size(); j = j + 3) {
-				if(col.get(j/3).equals(primary_Key.get(i))) {
+				if(col.get(j).equals(primary_Key.get(i))) {
 					pri_id = j / 3;
 					break;
 				}
