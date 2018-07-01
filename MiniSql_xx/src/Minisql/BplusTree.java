@@ -17,6 +17,17 @@ public class BplusTree {
 		 * 
 		 * */
 		
+	//Our MiniSql use B+ Tree with n = 4
+		//Every node has at least 1 value and most 3 value
+		//Every node has at least 2 pointer and most 4 pointer
+		
+		/*
+		 * 	.index
+		 * 	first 4 byte, save the root's offset
+		 * 	when search jump to root and begin search
+		 * 
+		 * */
+		
 		static public class TreeNode{
 			//the position ID: for write and read
 			int positionId;
@@ -181,7 +192,15 @@ public class BplusTree {
 			public Tree(String filename) {
 				//read tree from file
 				BufferOperator fp = new BufferOperator(filename);
-				int rootID = TreeNode.getId(BufferManage.byte2Int(fp.read(4)), type);
+				int rootID = BufferManage.byte2Int(fp.read(4));
+				if(rootID == -1) {
+					//empty
+					nodes = new ArrayList<TreeNode>();
+					type = BufferManage.byte2Int(fp.read(4));
+					Root = null;
+					return;
+				}
+				rootID = TreeNode.getId(rootID, type);
 				type = BufferManage.byte2Int(fp.read(4));
 				nodes = new ArrayList<TreeNode>();
 				int NodeSize = BufferManage.byte2Int(fp.read(4));
@@ -742,7 +761,10 @@ public class BplusTree {
 				
 				//first write the Basic information of Tree
 				BufferOperator fp = new BufferOperator(filename);
-				fp.write(BufferManage.Int2byte(TreeNode.GetOffsetOfBlock(Root.positionId, type)));
+				if(Root != null)
+					fp.write(BufferManage.Int2byte(TreeNode.GetOffsetOfBlock(Root.positionId, type)));
+				else 
+					fp.write(BufferManage.Int2byte(-1));
 				fp.write(BufferManage.Int2byte(type));
 				fp.write(BufferManage.Int2byte(nodes.size()));
 				fp.write(BufferManage.String2byte("", oneNodeSize-12));
