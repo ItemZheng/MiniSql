@@ -4,9 +4,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
 
+import Minisql.BplusTree.TreeNode;
 import Minisql.BufferManage.*;
 import Minisql.Structure.*;
-import javafx.geometry.Pos;
+
 
 /*this class is used for tablename.record*/
 public class RecordManager {
@@ -81,6 +82,7 @@ public class RecordManager {
 				break;
 			default://char 1-255
 				String value1 = BufferManage.byte2String(rec.columns.get(AttrIndex));
+
 				switch (conditions.get(i).op) {
 				case Lt:
 					if (value1.compareTo(value2) >= 0) return false;break;
@@ -93,7 +95,7 @@ public class RecordManager {
 				case Eq:
 					if (value1.compareTo(value2) != 0) return false;break;
 				case Ne:
-					if (value1.compareTo(value2) == 0)  return false;break;
+					if (value1.equals(value2))  return false;break;
 				}
 				break;
 			}
@@ -105,17 +107,23 @@ public class RecordManager {
 	/*check if there is at least one record meet the needs*/
 	public static Boolean exist(Table tb,Vector<Condition>conditions)
 	{	String filename= tb.table_name+".record";
-		
-		///????
-		for(int i=0; i<conditions.size();i++)
+		BufferOperator fp = new BufferOperator(filename);
+		for(int i=0;i< tb.RecordNum; i++)
 		{
-			
-		}
+			byte[] RecByteLine =  fp.read(tb.oneRecord_length);
+		   Record rec1=SplitRecord(tb, RecByteLine);
+		   if(Compare(tb, rec1, conditions)) {
+			   fp.close();
+			   return true;
+		   }
+		}	
+		fp.close();
+		
 		return false;
 	}
 	
 	/*complete the whole insert operation including the index*/
-	public static void Insert_Value(Table tb, Record rec){
+	public static int Insert_Value(Table tb, Record rec){
 		String filename= tb.table_name+".record";
 		
 		//open file
@@ -148,7 +156,7 @@ public class RecordManager {
 		
 		
 		System.out.println("insert success in record file!");
-		
+		return offset;
 	}
 	
 	public static void Delete_Table(Table tb) {
@@ -166,30 +174,11 @@ public class RecordManager {
 	
 	public static void Delete(Table tb ,Vector<Condition>conditions){
 		
-		String filename= tb.table_name+".record";
-		
-	/*	for(int i=0;i< all record???)
-		{
-			byte[] RecByteLine =   read one Line record From BufferManager
-	
-			record rec=SplitRecord(tb, RecByteLine);
-					
-					
-			if(Compare(tb, rec, conditions)==true)
-			{
-				BufferManage.deleteRecord
-				count++;
-				tb.RecordNum--;
-				for(int j=0;j<tb.indexes.size();j++)
-				{
-					Index inx1= CatalogManager.getIndex(tb.indexes.get(j));
-					IndexManager.DeleteKey(inx1, rec.columns.get(inx1.attr_index));
-				}
-			}
-		}
-	*/			
-	ArrayList< Integer> offsets = new ArrayList<Integer>();
+		String filename= tb.table_name+".record";	
+		ArrayList< Integer> offsets = new ArrayList<Integer>();
 		offsets =  SelectBeforeDelete (tb,conditions);
+	
+		
 		Collections.reverse(offsets);
 		for(int i=0;i<offsets.size();i++)
 		{
@@ -205,25 +194,44 @@ public class RecordManager {
 			
 			BufferOperator fp = new BufferOperator(filename, maxOff);
 			byte[] lastRecord = fp.read(tb.oneRecord_length);
+			fp.close();
+			fp = new BufferOperator(filename, offsets.get(i));
+			byte[] todeleteRecord = fp.read(tb.oneRecord_length);
+			
 			fp.move(offsets.get(i));
 			fp.write(lastRecord);
 			fp.close();
+			
+			for(int j=0;j<tb.indexes.size();j++)
+			{
+				Index inx1 = CatalogManager.getIndex(tb.indexes.get(j));
+				byte[] todeleteValue =TreeNode.getSubByte(todeleteRecord, tb.attributes.get(inx1.attr_index).offset, inx1.attr_length);
+				byte[] lastValue = TreeNode.getSubByte(lastRecord, tb.attributes.get(inx1.attr_index).offset, inx1.attr_length);
+				IndexManager.DeleteKey(inx1, lastValue, maxOff);
+				IndexManager.DeleteKey(inx1, todeleteValue, offsets.get(i));
+				IndexManager.InsertKey(inx1, lastValue, offsets.get(i));
+			}
+			
 			tb.RecordNum--;
 		}
 			
 		System.out.println("delete "+offsets.size()+ " records successfully in record manager");
 	
 	}
+	
+	
+	
 	public static ArrayList< Integer>  SelectBeforeDelete (Table tb, Vector<Condition> conditions) {
 		String filename= tb.table_name+".record";
 		// if has index
 		int flag =0;
-		int k;
-		/*for(k=0;k<tb.indexes.size();k++)
+		int k=0;
+		int j=-1;
+		for(k=0;k<tb.indexes.size();k++)
 		{
 			String inxName=tb.indexes.get(k);
 			Index inx1= CatalogManager.getIndex(inxName);
-			for(int j=0;j<conditions.size();j++)
+			for(j=0;j<conditions.size();j++)
 			{
 				if(inx1.attr_index ==conditions.get(j).AttrIndex ) {
 					flag=1;
@@ -233,14 +241,77 @@ public class RecordManager {
 			if(flag==1)
 				break;
 		}
-		//find one index
+		//find the first index
 		if(flag ==1) {
 			String inxName=tb.indexes.get(k);
 			Index inx1= CatalogManager.getIndex(inxName);
-			//B+search  and get offsets?????????????????????/
-		  // offsets : ArrayList<Integer>???????????????????????????????????????
+			ArrayList<Integer> tempRecordOffsets= new ArrayList<Integer>();
+			byte[] value1= new byte[inx1.attr_length];
+			
+			switch (inx1.attr_type) {
+			case 0://integer
+				int intvalue = Integer.parseInt(conditions.get(j).value);
+				value1= BufferManage.Int2byte(intvalue);
+				break;
+			case 256://float;
+			    float floatvalue =	Float.parseFloat(conditions.get(j).value);
+				value1= BufferManage.Float2Byte(floatvalue);
+			    break;
+			default:
+				value1=BufferManage.String2byte(conditions.get(j).value, inx1.attr_length);
+				break;
+			}
+			
+			switch (conditions.get(j).op) {
+			case Lt: //less then 
+			     tempRecordOffsets= IndexManager.SearchWithIndex(inx1, value1,null); break;
+			case Le: //less equal
+				 tempRecordOffsets= IndexManager.SearchWithIndex(inx1, value1,null); break;
+			case Gt: //greater then 
+				 tempRecordOffsets= IndexManager.SearchWithIndex(inx1, null,value1); break;
+			case Ge:
+				 tempRecordOffsets= IndexManager.SearchWithIndex(inx1, null,value1); break;
+			case Eq:
+				tempRecordOffsets= IndexManager.SearchWithIndex(inx1,value1); break;
+			case Ne://do nothing 
+				break;
+			}
+			if(conditions.get(j).op.equals(Comparison.Ne))
+			{
+				ArrayList< Integer> offsets = new ArrayList<Integer>();
+				BufferOperator fp = new BufferOperator(filename);
+				for(int i=0;i< tb.RecordNum; i++)
+				{
+					int TempOffset = fp.getOffset();
+					byte[] RecByteLine = fp.read(tb.oneRecord_length);
+								
+					Record rec=SplitRecord(tb, RecByteLine);
+					if(Compare(tb, rec, conditions)==true)
+					{
+						offsets.add(TempOffset);
+					}		
+				}
+				fp.close();
+				return  offsets;
+			}else {		
+				ArrayList<Integer>  RecordOffsets= new ArrayList<Integer>();
+				BufferOperator fp = new BufferOperator(filename);
+				 for(int z=0;z< tempRecordOffsets.size();z++)
+			     {
+			    	 fp.move(tempRecordOffsets.get(z));
+			    	 byte[] RecByteLine = fp.read(tb.oneRecord_length);
+			    	 Record rec=SplitRecord(tb, RecByteLine);
+						if(Compare(tb, rec, conditions)==true)
+						{
+							RecordOffsets.add(tempRecordOffsets.get(z));
+						}
+			     }
+				 fp.close();
+				 return RecordOffsets;
+			}
 		
-		}else {*/
+		
+		}else { //no index in the condition's attribute
 			ArrayList< Integer> offsets = new ArrayList<Integer>();
 			BufferOperator fp = new BufferOperator(filename);
 			for(int i=0;i< tb.RecordNum; i++)
@@ -256,13 +327,13 @@ public class RecordManager {
 			}
 			fp.close();
 			return  offsets;
-		//}
+		}
 		
 	}
 	
 	
 	
-	//select all record from the table 
+	/*select all record from the table */
 	public static void Select (Table tb) {
 		
 		String filename=tb.table_name+".record";    
@@ -282,11 +353,9 @@ public class RecordManager {
 		fp.close();
 		showAttrName(attrName);
 		showDatas(datas);
-	
-		
 	}
 	
-	//select the records which meets the conditions from the table
+	/*select the records which meets all the conditions from the table*/
 	public static void Select (Table tb, Vector<Condition> conditions) {
 		String filename= tb.table_name+".record";
 		Data datas=new Data();
@@ -294,15 +363,17 @@ public class RecordManager {
 		for(int j=0;j<tb.attrNum;j++) {
 			attrName.colunms.addElement(tb.attributes.get(j).name);
 		}
+
 		
-		// if has index
+		// whether has index
 		int flag =0;
-		int k;
-		/*for(k=0;k<tb.indexes.size();k++)
+		int k=0;
+		int j=-1;
+		for(k=0;k<tb.indexes.size();k++)
 		{
 			String inxName=tb.indexes.get(k);
 			Index inx1= CatalogManager.getIndex(inxName);
-			for(int j=0;j<conditions.size();j++)
+			for(j=0;j<conditions.size();j++)
 			{
 				if(inx1.attr_index ==conditions.get(j).AttrIndex ) {
 					flag=1;
@@ -312,14 +383,77 @@ public class RecordManager {
 			if(flag==1)
 				break;
 		}
-		//find one index
+		//find the first index
 		if(flag ==1) {
 			String inxName=tb.indexes.get(k);
 			Index inx1= CatalogManager.getIndex(inxName);
-			//B+search  and get offsets?????????????????????/
-		  // offsets : ArrayList<Integer>???????????????????????????????????????
+			ArrayList<Integer> tempRecordOffsets= new ArrayList<Integer>();
+			byte[] value1= new byte[inx1.attr_length];
+			
+			switch (inx1.attr_type) {
+			case 0://integer
+				int intvalue = Integer.parseInt(conditions.get(j).value);
+				value1= BufferManage.Int2byte(intvalue);
+				break;
+			case 256://float;
+			    float floatvalue =	Float.parseFloat(conditions.get(j).value);
+				value1= BufferManage.Float2Byte(floatvalue);
+			    break;
+			default:
+				value1=BufferManage.String2byte(conditions.get(j).value, inx1.attr_length);
+				break;
+			}
+			
+			switch (conditions.get(j).op) {
+			case Lt: //less then 
+			     tempRecordOffsets= IndexManager.SearchWithIndex(inx1, value1,null); break;
+			case Le: //less equal
+				 tempRecordOffsets= IndexManager.SearchWithIndex(inx1, value1,null); break;
+			case Gt: //greater then 
+				 tempRecordOffsets= IndexManager.SearchWithIndex(inx1, null,value1); break;
+			case Ge:
+				 tempRecordOffsets= IndexManager.SearchWithIndex(inx1, null,value1); break;
+			case Eq:
+				tempRecordOffsets= IndexManager.SearchWithIndex(inx1,value1); break;
+			case Ne://do nothing 
+				break;
+			}
+			if(conditions.get(j).op.equals(Comparison.Ne))
+			{
+				
+				BufferOperator fp = new BufferOperator(filename);
+				for(int i=0;i< tb.RecordNum; i++)
+				{
+					int TempOffset = fp.getOffset();
+					byte[] RecByteLine = fp.read(tb.oneRecord_length);
+								
+					Record rec=SplitRecord(tb, RecByteLine);
+					if(Compare(tb, rec, conditions)==true)
+					{
+						OneRow row1=SplitRecord2OneRow(tb, RecByteLine);
+						datas.rows.add(row1);
+					}		
+				}
+				fp.close();
+				
+			}else {		
+				BufferOperator fp = new BufferOperator(filename);
+				 for(int z=0;z< tempRecordOffsets.size();z++)
+			     {
+			    	 fp.move(tempRecordOffsets.get(z));
+			    	 byte[] RecByteLine = fp.read(tb.oneRecord_length);
+			    	 Record rec=SplitRecord(tb, RecByteLine);
+						if(Compare(tb, rec, conditions)==true)
+						{
+							OneRow row1=SplitRecord2OneRow(tb, RecByteLine);
+							datas.rows.add(row1);
+						}
+			     }
+				 fp.close();
+				
+			}
 		
-		}else {*/
+		}else {
 			BufferOperator fp = new BufferOperator(filename);
 			for(int i=0;i< tb.RecordNum; i++)
 			{
@@ -333,7 +467,7 @@ public class RecordManager {
 				}		
 			}
 			fp.close();
-		//}
+		}
 		showAttrName(attrName);
 		showDatas(datas);
 	}
@@ -348,33 +482,105 @@ public class RecordManager {
 			attrName.colunms.addElement(tb.attributes.get(selections.AttrIndexes.get(j)).name);
 		}
 		
-	/*	// if has index
-		int flag =0;
-		int k;
-		for(k=0;k<tb.indexes.size();k++)
-		{
-			String inxName=tb.indexes.get(k);
-			Index inx1= CatalogManager.getIndex(inxName);
-			for(int j=0;j<conditions.size();j++)
-			{
-				if(inx1.attr_index ==conditions.get(j).AttrIndex ) {
-					flag=1;
-					break;
-				}	
-			}
-			if(flag==1)
-				break;
-		}
-		//find one index
-		if(flag ==1) {
-			String inxName=tb.indexes.get(k);
-			Index inx1= CatalogManager.getIndex(inxName);
-			//B+search  and get offsets?????????????????????/
-		  // offsets : ArrayList<Integer>???????????????????????????????????????
-			// get oneRow 
-			// get selectedRow
-		
-		}else {*/
+		// whether has index
+				int flag =0;
+				int k=0;
+				int j=-1;
+				for(k=0;k<tb.indexes.size();k++)
+				{
+					String inxName=tb.indexes.get(k);
+					Index inx1= CatalogManager.getIndex(inxName);
+					for(j=0;j<conditions.size();j++)
+					{
+						if(inx1.attr_index ==conditions.get(j).AttrIndex ) {
+							flag=1;
+							break;
+						}	
+					}
+					if(flag==1)
+						break;
+				}
+				//find the first index
+				if(flag ==1) {
+					String inxName=tb.indexes.get(k);
+					Index inx1= CatalogManager.getIndex(inxName);
+					ArrayList<Integer> tempRecordOffsets= new ArrayList<Integer>();
+					byte[] value1= new byte[inx1.attr_length];
+					
+					switch (inx1.attr_type) {
+					case 0://integer
+						int intvalue = Integer.parseInt(conditions.get(j).value);
+						value1= BufferManage.Int2byte(intvalue);
+						break;
+					case 256://float;
+					    float floatvalue =	Float.parseFloat(conditions.get(j).value);
+						value1= BufferManage.Float2Byte(floatvalue);
+					    break;
+					default:
+						value1=BufferManage.String2byte(conditions.get(j).value, inx1.attr_length);
+						break;
+					}
+					
+					switch (conditions.get(j).op) {
+					case Lt: //less then 
+					     tempRecordOffsets= IndexManager.SearchWithIndex(inx1, value1,null); break;
+					case Le: //less equal
+						 tempRecordOffsets= IndexManager.SearchWithIndex(inx1, value1,null); break;
+					case Gt: //greater then 
+						 tempRecordOffsets= IndexManager.SearchWithIndex(inx1, null,value1); break;
+					case Ge:
+						 tempRecordOffsets= IndexManager.SearchWithIndex(inx1, null,value1); break;
+					case Eq:
+						tempRecordOffsets= IndexManager.SearchWithIndex(inx1,value1); break;
+					case Ne://do nothing 
+						break;
+					}
+					if(conditions.get(j).op.equals(Comparison.Ne))
+					{
+						
+						BufferOperator fp = new BufferOperator(filename);
+						for(int i=0;i< tb.RecordNum; i++)
+						{
+							int TempOffset = fp.getOffset();
+							byte[] RecByteLine = fp.read(tb.oneRecord_length);
+										
+							Record rec=SplitRecord(tb, RecByteLine);
+							if(Compare(tb, rec, conditions)==true)
+							{
+								OneRow row1=SplitRecord2OneRow(tb, RecByteLine);
+								OneRow selectedRow = new OneRow();
+								for(int m=0; m< selections.AttrIndexes.size();m++)
+								{
+									int tempAttrIndex= selections.AttrIndexes.get(m);
+									selectedRow.colunms.add(row1.colunms.get(tempAttrIndex));
+								}
+								datas.rows.add(selectedRow);
+							}		
+						}
+						fp.close();
+						
+					}else {		
+						BufferOperator fp = new BufferOperator(filename);
+						 for(int z=0;z< tempRecordOffsets.size();z++)
+					     {
+					    	 fp.move(tempRecordOffsets.get(z));
+					    	 byte[] RecByteLine = fp.read(tb.oneRecord_length);
+					    	 Record rec=SplitRecord(tb, RecByteLine);
+								if(Compare(tb, rec, conditions)==true)
+								{
+									OneRow row1=SplitRecord2OneRow(tb, RecByteLine);
+									OneRow selectedRow = new OneRow();
+									for(int m=0; m< selections.AttrIndexes.size();m++)
+									{
+										int tempAttrIndex= selections.AttrIndexes.get(m);
+										selectedRow.colunms.add(row1.colunms.get(tempAttrIndex));
+									}
+									datas.rows.add(selectedRow);
+								}
+					     }
+						 fp.close();
+					}
+		}else {
 			BufferOperator fp = new BufferOperator(filename);
 			for(int i=0;i< tb.RecordNum; i++)
 			{
@@ -385,16 +591,16 @@ public class RecordManager {
 				{
 					OneRow row1=SplitRecord2OneRow(tb, RecByteLine);
 					OneRow selectedRow = new OneRow();
-					for(int j=0; j< selections.AttrIndexes.size();j++)
+					for(int m=0; m< selections.AttrIndexes.size();m++)
 					{
-						int tempAttrIndex= selections.AttrIndexes.get(j);
+						int tempAttrIndex= selections.AttrIndexes.get(m);
 						selectedRow.colunms.add(row1.colunms.get(tempAttrIndex));
 					}
 					datas.rows.add(selectedRow);
 				}		
 			}
 			fp.close();
-		//}
+		}
 			
 		showAttrName(attrName);
 		showDatas(datas);
@@ -484,7 +690,7 @@ public class RecordManager {
 	
 	
 	
-	/*show the data added into the datas */
+	/*show the data  */
 	public static void showDatas(Data datas){
 		if(datas.rows.size()==0)
 		{
@@ -498,7 +704,7 @@ public class RecordManager {
 				int j;
 				for(j=0;j<datas.rows.get(i).colunms.size()-1;j++)
 				{
-					System.out.print(datas.rows.get(i).colunms.get(j)+",");
+					System.out.print(datas.rows.get(i).colunms.get(j)+"\t");
 				}
 				System.out.print(datas.rows.get(i).colunms.get(j));
 				System.out.print("]\n");
@@ -517,7 +723,7 @@ public class RecordManager {
 			int i;
 			for (i=0; i<row1.colunms.size()-1;i++)
 			{
-				System.out.print(row1.colunms.get(i)+",");
+				System.out.print(row1.colunms.get(i)+"\t");
 			}
 			System.out.print(row1.colunms.get(i));
 			System.out.print("]\n");

@@ -15,7 +15,7 @@ import Minisql.Structure.*;
 public class API {
 	public static int API_Module(List SQLargv)
 	{
-		System.out.println(SQLargv);
+		//System.out.println(SQLargv);
 		if (SQLargv.get(0).equals("quit"))
 		{
 			//use buffermanage to save file.
@@ -281,7 +281,7 @@ public class API {
 					case ">":
 						cd.op= Comparison.Gt;
 						break;
-					case "!=":
+					case "<>":
 						cd.op= Comparison.Ne;
 						break;
 					case "=":
@@ -458,14 +458,16 @@ public class API {
 						}
 						rec1.columns.add(tempBytes);
 					}
-					RecordManager.Insert_Value(tb1,rec1); //add the record to the table.record
+					int offset= RecordManager.Insert_Value(tb1,rec1); //add the record to the table.record
 					tb1.RecordNum++ ;// just make tb1.RecordNum++  in catalog manager
 					
 					//insert the index key to the B+ tree.
 					for(int j=0;j<tb1.indexes.size();j++)
 					{
+					
 						Index tempinx = CatalogManager.getIndex(tb1.indexes.get(j));
-						IndexManager.InsertKey(tempinx,rec1.columns.get(tempinx.attr_index));
+					
+						IndexManager.InsertKey(tempinx,rec1.columns.get(tempinx.attr_index),offset);
 					}
 						
 					System.out.println("insert success for all indexes!");
@@ -491,13 +493,14 @@ public class API {
 			{
 				
 				RecordManager.Delete_Table(tb1);
-				System.out.println("RecordManager.Delete_Table(tb1); -done");
 				for(int i =0; i<tb1.indexes.size();i++)
 				{
 					Index inx=CatalogManager.getIndex(tb1.indexes.get(i));
 					IndexManager.Delete_Index(tb1, inx); //clear index_name.index file
 				}
 				tb1.RecordNum=0; //table's record number =0;	
+				System.out.println("done");
+				return 1;
 				
 			}else { // delete from table with some conditions
 				Vector< Condition> conditions=new Vector< Condition>();
@@ -571,7 +574,7 @@ public class API {
 					case ">":
 						cd.op= Comparison.Gt;
 						break;
-					case "!=":
+					case "<>":
 						cd.op= Comparison.Ne;
 						break;
 					case "=":
@@ -581,7 +584,8 @@ public class API {
 					conditions.add(cd);
 				}
 				RecordManager.Delete(tb1,conditions);
-				
+				System.out.println("done");
+				return 1;
 			}
 		}
 		return 1;

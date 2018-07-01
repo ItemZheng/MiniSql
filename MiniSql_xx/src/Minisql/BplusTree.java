@@ -198,6 +198,7 @@ public class BplusTree {
 					nodes = new ArrayList<TreeNode>();
 					type = BufferManage.byte2Int(fp.read(4));
 					Root = null;
+					fp.close();
 					return;
 				}
 				rootID = TreeNode.getId(rootID, type);
@@ -293,7 +294,7 @@ public class BplusTree {
 					Integer [] nextIDS = NextNodes.get(i);
 					for(int j = 0; j < 4; j++) {
 						if(nextIDS[j] == -1) {
-							nodes.get(i).NextNodes.add(null);
+							//nodes.get(i).NextNodes.add(null);
 						}
 						else {
 							nodes.get(i).NextNodes.add(nodes.get(TreeNode.getId(nextIDS[j], type)));
@@ -341,7 +342,7 @@ public class BplusTree {
 				int position = 0;
 				for(position = 0; position < leaf.values.size(); position++) {
 					byte[] c_value = leaf.values.get(position);
-					if(compare(value, c_value) == 0) {
+					if(compare(value, c_value, type) == 0) {
 						break;
 					}
 				}
@@ -402,7 +403,7 @@ public class BplusTree {
 					int position = 0;
 					for(position = 0; position < node.values.size(); position++) {
 						byte[] c_value = node.values.get(position);
-						if(compare(value, c_value) == 0) {
+						if(compare(value, c_value, type) == 0) {
 							break;
 						}
 					}
@@ -440,7 +441,7 @@ public class BplusTree {
 			// 0: less than
 			// 1: equal
 			// 2: large
-			private int compare(byte[] value, byte[] c_value) {
+			public static int compare(byte[] value, byte[] c_value, int type) {
 				//int 
 				try {
 					if(type == 0) {
@@ -487,7 +488,6 @@ public class BplusTree {
 					System.exit(0);
 				}
 				return -1;
-
 			}
 			
 			private TreeNode FindPosition(byte[] value) {
@@ -506,7 +506,7 @@ public class BplusTree {
 					int i;
 					for(i = 0; i < c_Node.values.size(); i++) {
 						byte[] c_value = c_Node.values.get(i);
-						if(compare(value, c_value) == 0) {
+						if(compare(value, c_value, type) == 0) {
 							break;
 						}
 					}

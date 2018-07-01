@@ -383,7 +383,9 @@ class BufferManage {
 	}
 	
 	public static String byte2String(byte[] source) {
+		
 		String str = new String(source);
+		str = str.substring(0, str.indexOf("\0"));
 		return str;
 	}
 	

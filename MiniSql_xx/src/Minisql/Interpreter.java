@@ -1300,6 +1300,10 @@ public class Interpreter {
 			{
 				continue;
 			}
+			else if(ch >= '0' && ch <= '9')
+			{
+				continue;
+			}
 			else if(ch == '_')
 			{
 				continue;
