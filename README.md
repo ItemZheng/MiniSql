@@ -1,7 +1,41 @@
-# DatabaseSummerProject
+# Mini Sql
 
-###  ① Interpreter ###
+## Introduction
 
+This project is to design and complete mini-database which supports:
+
++ create table (supports primary key)
++ create index (B+ tree)
++ drop index
++ drop table
++ insert 
++ select
++ delete
++ execute scripts
+
+## Preparement
+
++ java 8+
++ eclipse (not necessary)
+
+## Install 
+
++ Execute commands follows:
+
+` git clone https://github.com/ItemZheng/MiniSql`
+
+` cd MiniSql\MiniSql\src`
+
+` javac .\Minisql\MiniSQL.java`
+
+` java MiniSQL`
+
++ Run it in eclipse
+
+
+## Design
+
+### Interpreter
 #### 功能： ####
 + 检查用户输入的语法，如果正确，转化为参数，调用API；错误，则直接给出语法层次的错误信息。
 
@@ -95,7 +129,7 @@
 		execfile 文件名;
 		arguments: [7, file_name];
 
-###   ② DB File ###
+### DB File
 
 ##### Buffer #####
 
@@ -185,7 +219,7 @@
 		fp.close();*/
 		BufferManage.saveAllBlock();
 
-###use###
+### Use
 + create table
  
 		检查table.catelog里tablename存在否，存在报错，不存在就在这里加入此表信息。检查primary key，如果存在就调用建立索引。
@@ -201,7 +235,7 @@
 
 		检查index名字是否在index.catelog存在 。不存在报错，存在就在index.catelog删除索引和相应的 .index 的b+树文件。
 
-+ select*/attributes from 表名  (where)
++ select */attributes from 表名  (where)
 
 		在table.catelog里判断是不是有这个表。
 		有的话就判断有没有where，没有的话就读出tablename.record，然后根据要求的属性输出。
