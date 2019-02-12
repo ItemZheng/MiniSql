@@ -13,6 +13,10 @@ This project is to design and complete mini-database which supports:
 + delete
 + execute scripts
 
+## Contributors
++ [Zheng](https://github.com/ItemZheng): Interpreter && Index && Buffer 
++ [Xie](https://github.com/AlphaPav): API && Catalog && Record
+
 ## Preparement
 
 + java 8+
