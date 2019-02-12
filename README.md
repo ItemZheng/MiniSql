@@ -28,9 +28,50 @@ This project is to design and complete mini-database which supports:
 
 ` javac .\Minisql\MiniSQL.java`
 
-` java MiniSQL`
+` java Minisql.MiniSQL`
 
 + Run it in eclipse
+
+## Run
+
+![Run](https://github.com/ItemZheng/MiniSql/blob/master/RunImage/run.jpg)
+
+## Usage
+
++ 支持的SQL语法：
+		create table 表名 (
+			列名 类型 ,
+			列名 类型 ,
+			列名 类型 ,
+			primary key ( 列名 )
+		);
+		
+
+		create index 索引名 on 表名 ( 列名 );		
+
+		drop index 索引名;
+
+		drop table 表名;
+
+		select * from 表名 ;
+		
+		select * from 表名 where 条件 ;
+		
+		insert into 表名 values ( 值1 , 值2 , … , 值n );
+
+		delete from 表名 ;
+		
+		delete from 表名 where 条件 ;
+		
+
++ 退出
+		
+		quit;
+		
+
++ 执行 SQL 脚本
+		
+		execfile 文件名;
 
 
 ## Design
